@@ -48,6 +48,14 @@
         <label class="input-label">Confirm Password</label>
         <input class="input" id="confirm" type="password" placeholder="Repeat your password" required/>
       </div>
+      <div class="input-group">
+        <label class="input-label">Verification Code</label>
+        <div class="flex gap-8" style="align-items: center;">
+          <img id="captcha-img" src="" alt="Captcha" style="height:38px; border-radius:4px; border:1px solid var(--border); cursor:pointer" title="Click to refresh"/>
+          <input class="input" id="captcha-answer" placeholder="Enter code" required style="flex:1"/>
+          <input type="hidden" id="captcha-id"/>
+        </div>
+      </div>
       <label class="flex-center gap-10 t-sm" style="cursor:pointer">
         <input type="checkbox" id="agree" style="accent-color:var(--purple)" required/>
         I agree to the <a href="#" style="color:var(--purple)">Terms of Service</a> and <a href="#" style="color:var(--purple)">Privacy Policy</a>
@@ -55,14 +63,8 @@
       <button class="btn btn-primary btn-lg w-full" type="submit" id="submit-btn">Create Account</button>
     </form>
 
-    <div class="auth-divider">or sign up with</div>
-    <div class="flex gap-12">
-      <button class="btn btn-outline auth-social-btn" onclick="demoSignup('google')">🇬 Google</button>
-      <button class="btn btn-outline auth-social-btn" onclick="demoSignup('github')">⬛ GitHub</button>
-    </div>
-
     <p class="t-sm t-muted t-center mt-24">
-      Already have an account? <a href="/pages/login.html" style="color:var(--purple);font-weight:600">Log in</a>
+      Already have an account? <a href="/login" style="color:var(--purple);font-weight:600">Log in</a>
     </p>
   </div>
 </div>
@@ -91,23 +93,40 @@ document.getElementById('password')?.addEventListener('input', e => {
   setHint('pw-digit', /\d/.test(v));
 });
 
-async function doSignup(name, email, password) {
+async function refreshCaptcha() {
+  try {
+    const cap = await API.auth.getCaptcha();
+    document.getElementById('captcha-img').src = cap.image_url;
+    document.getElementById('captcha-id').value = cap.id;
+    document.getElementById('captcha-answer').value = '';
+  } catch (e) {
+    console.error('Failed to load captcha', e);
+  }
+}
+
+document.getElementById('captcha-img').onclick = refreshCaptcha;
+
+async function doSignup(name, email, password, captcha_id, captcha_answer) {
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = 'Creating account…';
   try {
     const username = (name || email.split('@')[0]).replace(/\s+/g,'_').toLowerCase();
-    const res = await API.auth.register({ email, username, password, full_name: name });
+    const res = await API.auth.register({ 
+      email, username, password, full_name: name,
+      captcha_id, captcha_answer
+    });
     State.setToken(res.access_token, res.refresh_token);
     const user = res._user || { id: res.user_id, username, email, role: res.role || 'user' };
     State.setUser(user);
     document.getElementById('step-2-bar').style.background = 'var(--purple)';
     Toast.show('Welcome to ExamPrep, ' + user.username + '!');
-    window.location.href = '/index.html';
+    window.location.href = '/';
   } catch(e) {
     showError(e.message || 'Registration failed. Please try again.');
     btn.disabled = false;
     btn.textContent = 'Create Account';
+    refreshCaptcha();
   }
 }
 
@@ -118,22 +137,21 @@ document.getElementById('signup-form').addEventListener('submit', async e => {
   const password = document.getElementById('password').value;
   const confirm  = document.getElementById('confirm').value;
   const agreed   = document.getElementById('agree').checked;
+  const captcha_id = document.getElementById('captcha-id').value;
+  const captcha_answer = document.getElementById('captcha-answer').value;
   if (!email || !password) { showError('Email and password are required.'); return; }
   if (password.length < 8) { showError('Password must be at least 8 characters.'); return; }
   if (!/[A-Z]/.test(password)) { showError('Password needs at least one uppercase letter.'); return; }
   if (!/\d/.test(password)) { showError('Password needs at least one digit.'); return; }
   if (password !== confirm) { showError('Passwords do not match.'); return; }
   if (!agreed) { showError('Please accept the Terms of Service.'); return; }
-  await doSignup(name, email, password);
+  await doSignup(name, email, password, captcha_id, captcha_answer);
 });
-
-function demoSignup(provider) {
-  doSignup('Demo User', `demo_${provider}_${Date.now()}@examprep.dev`, 'Demo1234!');
-}
 
 document.addEventListener('DOMContentLoaded', () => {
   Nav.render();
-  if (State.user) window.location.href = '/index.html';
+  refreshCaptcha();
+  if (State.user) window.location.href = '/';
 });
 </script>
 </body>

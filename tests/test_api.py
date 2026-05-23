@@ -28,6 +28,16 @@ class TestAuthSchemas:
         r = RegisterRequest(email="user@example.com", username="user1", password="Secret123")
         assert r.email == "user@example.com"
 
+    def test_register_requires_captcha(self):
+        from pydantic import ValidationError
+        from app.schemas.schemas import RegisterRequest
+        # Registration should fail without captcha fields
+        with pytest.raises(ValidationError):
+            RegisterRequest(
+                email="test@test.com", username="tester", password="Password123!",
+                captcha_id="some-id" # Missing captcha_answer
+            )
+
     def test_login_schema(self):
         from app.schemas.schemas import LoginRequest
         r = LoginRequest(email="user@example.com", password="pass")

@@ -2,7 +2,7 @@
 app/main.py  —  FastAPI application entry point (MVC: Router/Controller layer)
 """
 from contextlib import asynccontextmanager
-from fastapi import FastAPI
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
@@ -84,6 +84,36 @@ def create_app() -> FastAPI:
     async def serve_exam_detail(slug: str):
         frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
         return FileResponse(os.path.join(frontend_path, "pages", "exam-detail.html"))
+
+    # ── Serve Static Pages with Clean URLs ───────────────────────
+    @app.get("/login", include_in_schema=False)
+    @app.get("/signup", include_in_schema=False)
+    @app.get("/profile", include_in_schema=False)
+    @app.get("/admin", include_in_schema=False)
+    @app.get("/my-learning", include_in_schema=False)
+    @app.get("/quiz", include_in_schema=False)
+    async def serve_pages(request: Request):
+        page = request.url.path.strip("/")
+        filename = "exam-quiz.html" if page == "quiz" else f"{page}.html"
+        frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+        return FileResponse(os.path.join(frontend_path, "pages", filename))
+
+    # ── Protect JS files from direct browser access ────────────────
+    @app.get("/js/{file_path:path}", include_in_schema=False)
+    async def protect_js(request: Request, file_path: str):
+        # If the browser is attempting to navigate directly to the file
+        sec_fetch_dest = request.headers.get("sec-fetch-dest")
+        accept = request.headers.get("accept", "")
+        
+        if sec_fetch_dest == "document" or ("text/html" in accept and "application/javascript" not in accept):
+            log.warning("security.js_leak_attempt", path=file_path, ip=request.client.host)
+            raise HTTPException(status_code=403, detail="Direct access to source scripts is forbidden.")
+
+        frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+        full_path = os.path.join(frontend_path, "js", file_path)
+        if os.path.exists(full_path):
+            return FileResponse(full_path)
+        raise HTTPException(status_code=404)
 
     # ── Serve frontend static files ───────────────────────────────
     frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")

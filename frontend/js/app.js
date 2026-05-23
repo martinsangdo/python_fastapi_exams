@@ -79,11 +79,21 @@ const API = {
   _mockFallback(method, path, body) {
     if (path.includes('/auth/login') || path.includes('/auth/register')) {
       const email = body?.email || 'user@demo.com';
+      // Simple captcha validation mock
+      if (path.includes('/auth/register') && (!body?.captcha_id || !body?.captcha_answer)) {
+        throw new Error('Captcha verification required');
+      }
       const user = { id: 'u1', username: email.split('@')[0], email, role: email.includes('admin') ? 'admin' : 'user' };
       const token = 'demo_token_' + Date.now();
       return { access_token: token, refresh_token: token + '_r', token_type: 'bearer', user_id: 'u1', role: user.role, _user: user };
     }
     if (path.includes('/auth/me')) return State.user;
+    if (path.includes('/auth/captcha')) {
+      return { 
+        id: 'cap_' + Math.random().toString(36).substr(2, 9), 
+        image_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAAAZCAYAAAB...' 
+      };
+    }
     if (path === '/exams' && method === 'GET') return { items: MOCK_EXAMS, total: MOCK_EXAMS.length, page: 1, page_size: 12, total_pages: 1 };
     if (path.startsWith('/exams/') && method === 'GET') {
       const segments = path.split('/');
@@ -101,6 +111,7 @@ const API = {
   },
 
   auth: {
+    getCaptcha: () => API.request('GET',  '/auth/captcha', null, false),
     login:    (d) => API.request('POST', '/auth/login', d, false),
     register: (d) => API.request('POST', '/auth/register', d, false),
     me:       ()  => API.request('GET',  '/auth/me'),
@@ -194,19 +205,19 @@ const MOCK_QUESTIONS = [
 /* ── Utility helpers ── */
 const Utils = {
   navigate(page, params = {}) {
-    if (page === 'home')        window.location.href = '/index.html';
-    else if (page === 'login')  window.location.href = '/pages/login.html';
-    else if (page === 'signup') window.location.href = '/pages/signup.html';
-    else if (page === 'profile') window.location.href = '/pages/profile.html';
-    else if (page === 'admin')  window.location.href = '/pages/admin.html';
-    else if (page === 'my-learning') window.location.href = '/pages/my-learning.html';
+    if (page === 'home')        window.location.href = '/';
+    else if (page === 'login')  window.location.href = '/login';
+    else if (page === 'signup') window.location.href = '/signup';
+    else if (page === 'profile') window.location.href = '/profile';
+    else if (page === 'admin')  window.location.href = '/admin';
+    else if (page === 'my-learning') window.location.href = '/my-learning';
     else if (page === 'exam-detail') {
       const slug = params.slug || params.exam?.slug;
       window.location.href = `/detail/${slug}`;
     } else if (page === 'exam-quiz') {
       const slug = params.exam?.slug || params.slug;
       const pkgId = params.pkg?.id || params.pkgId;
-      window.location.href = `/pages/exam-quiz.html?slug=${slug}&pkg=${pkgId}`;
+      window.location.href = `/quiz?slug=${slug}&pkg=${pkgId}`;
     }
   },
 
@@ -312,13 +323,13 @@ const Nav = {
     document.getElementById('nav-root').innerHTML = `
       <nav class="nav">
         <div class="nav-inner">
-          <a href="/index.html" class="nav-logo">
+          <a href="/" class="nav-logo">
             <div class="nav-logo-icon">E</div>
             ExamPrep
           </a>
           <div class="nav-links">
-            ${user ? `<a href="/pages/my-learning.html" class="nav-link ${activePage==='my-learning'?'active':''}">My Learning</a>` : ''}
-            ${user?.role === 'admin' ? `<a href="/pages/admin.html" class="nav-link ${activePage==='admin'?'active':''}">Admin</a>` : ''}
+            ${user ? `<a href="/my-learning" class="nav-link ${activePage==='my-learning'?'active':''}">My Learning</a>` : ''}
+            ${user?.role === 'admin' ? `<a href="/admin" class="nav-link ${activePage==='admin'?'active':''}">Admin</a>` : ''}
             ${user ? `
               <div class="nav-avatar-wrap">
                 <div class="nav-avatar" id="nav-avatar">${user.username[0].toUpperCase()}</div>
@@ -327,16 +338,16 @@ const Nav = {
                     <div class="nav-user-name">${user.username}</div>
                     <div class="nav-user-email">${user.email}</div>
                   </div>
-                  <a href="/pages/profile.html" class="nav-dropdown-item">${Icons.user(16)} My Profile</a>
-                  <a href="/pages/my-learning.html" class="nav-dropdown-item">${Icons.book(16)} My Learning</a>
-                  ${user.role==='admin' ? `<a href="/pages/admin.html" class="nav-dropdown-item">${Icons.settings(16)} Admin</a>` : ''}
+                  <a href="/profile" class="nav-dropdown-item">${Icons.user(16)} My Profile</a>
+                  <a href="/my-learning" class="nav-dropdown-item">${Icons.book(16)} My Learning</a>
+                  ${user.role==='admin' ? `<a href="/admin" class="nav-dropdown-item">${Icons.settings(16)} Admin</a>` : ''}
                   <div class="divider"></div>
                   <div class="nav-dropdown-item danger" id="nav-logout">${Icons.logout(16)} Log Out</div>
                 </div>
               </div>
             ` : `
-              <a href="/pages/login.html" class="btn btn-ghost">Log in</a>
-              <a href="/pages/signup.html" class="btn btn-primary">Sign up</a>
+              <a href="/login" class="btn btn-ghost">Log in</a>
+              <a href="/signup" class="btn btn-primary">Sign up</a>
             `}
           </div>
         </div>
@@ -344,7 +355,7 @@ const Nav = {
 
     // Search
     const si = document.getElementById('nav-search-input');
-    if (si) si.addEventListener('keydown', e => { if (e.key==='Enter' && si.value.trim()) window.location.href = `/index.html?q=${encodeURIComponent(si.value.trim())}`; });
+    if (si) si.addEventListener('keydown', e => { if (e.key==='Enter' && si.value.trim()) window.location.href = `/?q=${encodeURIComponent(si.value.trim())}`; });
 
     // Dropdown
     const avatar = document.getElementById('nav-avatar');
@@ -358,7 +369,7 @@ const Nav = {
     document.getElementById('nav-logout')?.addEventListener('click', async () => {
       try { await API.auth.logout(localStorage.getItem('ep_refresh')); } catch {}
       State.logout();
-      window.location.href = '/index.html';
+      window.location.href = '/';
     });
   },
 };

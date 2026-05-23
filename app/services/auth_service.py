@@ -7,11 +7,15 @@ Authentication business logic — Module 1 (FastAPI MVC) + Module 2 (Security).
 - JWT access + refresh token pair
 - Token refresh and logout (blacklist)
 """
+import uuid
+import random
+import string
 from datetime import datetime, timezone
 from typing import Optional
 import structlog
 
 from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, cache_delete, cache_delete_pattern, CacheKeys
 from app.core.security import (
     hash_password, verify_password,
     create_access_token, create_refresh_token,
@@ -30,8 +34,26 @@ class AuthError(Exception):
         super().__init__(message)
 
 
+async def generate_captcha() -> dict:
+    captcha_id = str(uuid.uuid4())
+    # Generate a simple 6-digit numeric captcha
+    answer = ''.join(random.choices(string.digits, k=6))
+    await cache_set(CacheKeys.CAPTCHA.format(captcha_id=captcha_id), answer, ttl=300)
+    
+    # In a production environment, you would use a library like 'captcha' or 'Pillow' 
+    # to generate an actual image and return it as a base64 string.
+    return {
+        "id": captcha_id,
+        "image_url": f"https://api.dicebear.com/7.x/initials/svg?seed={answer}&backgroundColor=b6e3f4"
+    }
+
+
 async def register_user(data: RegisterRequest) -> dict:
     db = get_db()
+
+    # Verify Captcha
+    if not await _verify_captcha(getattr(data, 'captcha_id', None), getattr(data, 'captcha_answer', None)):
+        raise AuthError("Invalid or expired captcha", 400)
 
     # Check uniqueness (MongoDB unique index will also catch races, belt + braces)
     if await db.users.find_one({"email": data.email.lower()}):
@@ -91,6 +113,17 @@ async def logout_user(access_token: str, refresh_token: Optional[str] = None):
     if refresh_token:
         await blacklist_token(refresh_token, expire_seconds=7 * 24 * 3600)
     log.info("auth.logout")
+
+
+async def _verify_captcha(captcha_id: str, answer: str) -> bool:
+    if not captcha_id or not answer:
+        return False
+    key = CacheKeys.CAPTCHA.format(captcha_id=captcha_id)
+    stored = await cache_get(key)
+    if stored and stored == answer:
+        await cache_delete(key)
+        return True
+    return False
 
 
 def _build_tokens(user: dict) -> dict:

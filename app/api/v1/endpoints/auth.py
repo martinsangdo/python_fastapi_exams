@@ -9,6 +9,11 @@ from app.middleware.auth import get_current_user, rate_limit
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
 
+@router.get("/captcha")
+async def get_captcha():
+    return await auth_service.generate_captcha()
+
+
 @router.post("/register", response_model=TokenResponse, status_code=201)
 async def register(data: RegisterRequest, _=Depends(rate_limit)):
     try:

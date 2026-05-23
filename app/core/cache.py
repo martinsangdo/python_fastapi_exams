@@ -14,6 +14,7 @@ Benefits demonstrated:
   - Leaderboard cached with short TTL → eventual consistency acceptable
 """
 import json
+import fnmatch
 from typing import Any, Optional
 import redis.asyncio as aioredis
 import structlog
@@ -22,26 +23,34 @@ from app.core.config import settings
 
 log = structlog.get_logger()
 _redis: Any = None
+_local_store = {}
 
 
 class NullCache:
+    """In-memory fallback when Redis is unavailable or intentionally disabled."""
     async def get(self, key: str):
-        return None
+        return _local_store.get(key)
 
     async def setex(self, key: str, ttl: int, value: str):
-        return False
+        _local_store[key] = value
+        return True
 
     async def delete(self, *keys: str):
-        return 0
+        count = 0
+        for k in keys:
+            if k in _local_store:
+                del _local_store[k]
+                count += 1
+        return count
 
     async def keys(self, pattern: str):
-        return []
+        return fnmatch.filter(_local_store.keys(), pattern)
 
     async def exists(self, *keys: str):
-        return 0
+        return sum(1 for k in keys if k in _local_store)
 
     async def ping(self):
-        return False
+        return True
 
     async def close(self):
         return None
@@ -49,6 +58,12 @@ class NullCache:
 
 async def init_cache():
     global _redis
+    # Handle intentional disable via config
+    if not settings.REDIS_URL or settings.REDIS_URL.lower() in ["", "none", "disabled", "false"]:
+        _redis = NullCache()
+        log.info("cache.init", status="in_memory_mode", reason="REDIS_URL is empty or disabled")
+        return
+
     try:
         _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
         await _redis.ping()
@@ -131,6 +146,7 @@ class CacheKeys:
     CERT_METADATA_CERTIFICATIONS = "cert_metadata:certifications"
     AI_HINT = "ai:hint:q:{question_id}:u:{user_id}"   # short TTL — personalized
     AI_EXPLAIN = "ai:explain:q:{question_id}"          # longer TTL — shared
+    CAPTCHA = "auth:captcha:{captcha_id}"
 
     @staticmethod
     def exam_pattern(exam_id: str) -> str:
