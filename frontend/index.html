@@ -165,14 +165,14 @@ async function loadCertifications() {
     // Transform and merge with MOCK_EXAMS
     if (allCerts.length > 0) {
       MOCK_EXAMS = allCerts.map((cert, idx) => ({
-        id: cert.id || String(idx + 1),
+        id: cert.id,
         slug: cert.slug,
-        title: cert.name,
+        title: cert.title,
         category: cert.category,
-        price: cert.price || 7.99,
-        students: cert.students || 0,
-        description: cert.short_brief || '',
-        learns: [],
+        price: cert.price,
+        students: cert.students,
+        description: cert.description,
+        learns: cert.learns || [],
       }));
     }
   } catch (err) {
@@ -220,8 +220,8 @@ function examCardHTML(exam) {
         <p class="t-sm t-muted mb-12">${exam.description}</p>
         ${(exam.learns||[]).slice(0,4).map(l=>`<div class="popup-feature">${Icons.check(13)} <span class="t-sm">${l}</span></div>`).join('')}
         <div class="flex gap-8 mt-16">
-          <a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-primary" style="flex:1">See Details</a>
-          ${!purchased ? `<a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-gold">${Utils.formatPrice(exam.price)}</a>` : '<span class="badge badge-green" style="padding:8px 14px">Enrolled</span>'}
+          <a href="/detail/${exam.slug}" class="btn btn-primary" style="flex:1">See Details</a>
+          ${!purchased ? `<a href="/detail/${exam.slug}" class="btn btn-gold">${Utils.formatPrice(exam.price)}</a>` : '<span class="badge badge-green" style="padding:8px 14px">Enrolled</span>'}
         </div>
       </div>
     </div>`;
@@ -248,7 +248,7 @@ function renderGrid() {
   }
   grid.innerHTML = exams.map(examCardHTML).join('');
   grid.querySelectorAll('.exam-card').forEach(card =>
-    card.addEventListener('click', () => window.location.href = `/pages/exam-detail.html?slug=${card.dataset.slug}`)
+    card.addEventListener('click', () => window.location.href = `/detail/${card.dataset.slug}`)
   );
 }
 

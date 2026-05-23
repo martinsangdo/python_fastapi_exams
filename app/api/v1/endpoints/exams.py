@@ -81,14 +81,16 @@ async def update_exam(exam_id: str, data: ExamUpdate, _=Depends(get_current_admi
 # ── Packages ─────────────────────────────────────────────────────────────────
 
 @router.get("/{exam_id}/packages")
-async def list_packages(exam_id: str, current_user=Depends(get_current_user)):
+async def list_packages(exam_id: str, current_user=Depends(get_optional_user)):
     from app.services.payment_service import has_access
-    from bson import ObjectId
-    user_id = str(current_user["_id"])
     packages = await exam_service.list_packages(exam_id)
 
-    # Mark which packages the user has access to
-    has = await has_access(user_id, exam_id)
+    has = False
+    if current_user:
+        user_id = str(current_user["_id"])
+        # Mark which packages the user has access to
+        has = await has_access(user_id, exam_id)
+
     for p in packages:
         p["has_access"] = has
     return packages

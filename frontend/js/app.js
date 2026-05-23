@@ -84,7 +84,15 @@ const API = {
       return { access_token: token, refresh_token: token + '_r', token_type: 'bearer', user_id: 'u1', role: user.role, _user: user };
     }
     if (path.includes('/auth/me')) return State.user;
-    if (path.includes('/exams') && method === 'GET') return { items: MOCK_EXAMS, total: MOCK_EXAMS.length, page: 1, page_size: 12, total_pages: 1 };
+    if (path === '/exams' && method === 'GET') return { items: MOCK_EXAMS, total: MOCK_EXAMS.length, page: 1, page_size: 12, total_pages: 1 };
+    if (path.startsWith('/exams/') && method === 'GET') {
+      const segments = path.split('/');
+      // Check if it's a package request: /exams/{id}/packages
+      if (segments.length > 3 && segments[3] === 'packages') return MOCK_PACKAGES;
+      // Otherwise it's an exam detail request: /exams/{slug}
+      const slug = segments[2];
+      return MOCK_EXAMS.find(e => e.slug === slug) || MOCK_EXAMS[0];
+    }
     if (path.includes('/attempts') && method === 'POST') return { id: 'att_' + Date.now(), status: 'in_progress', total_questions: 5 };
     if (path.includes('/finish')) return { attempt_id: 'att1', score: 80, correct_count: 4, total_questions: 5, passed: true, time_spent_seconds: 300, answers: [], pass_score_pct: 72 };
     if (path.includes('/payments/checkout')) return { checkout_url: '#', session_id: 'demo_session' };
@@ -133,14 +141,39 @@ const API = {
 
 /* ── Mock Data ── */
 let MOCK_EXAMS = [
-  { id:'1', slug:'aws-saa-c03',           title:'AWS Certified Solutions Architect – Associate (SAA-C03)', category:'Cloud',       price:29.99, students:12400, questions:360, description:'Master AWS architecture patterns with hands-on practice. Covers EC2, S3, VPC, RDS, Lambda, CloudFront, and all SAA-C03 exam domains.', learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'] },
-  { id:'2', slug:'comptia-security-plus', title:'CompTIA Security+ SY0-701',                              category:'Security',    price:24.99, students:8900,  questions:300, description:'Comprehensive Security+ prep covering threats, vulnerabilities, architecture, and compliance.',                                        learns:['Threat intelligence','Cryptography','Network security','Incident response','Risk management','Compliance'] },
-  { id:'3', slug:'python-professional',   title:'Python Professional Developer Certification',            category:'Programming', price:19.99, students:15200, questions:240, description:'Advanced Python exam prep covering OOP, async programming, DSA, testing, and system design.',                                           learns:['Advanced OOP','Async/await','Data structures','Testing with pytest','Design patterns','Performance'] },
-  { id:'4', slug:'cka-kubernetes',        title:'Certified Kubernetes Administrator (CKA)',               category:'DevOps',      price:34.99, students:6100,  questions:180, description:'Hands-on CKA prep with practical exercises on cluster management, workloads, networking, and storage.',                                  learns:['Cluster setup','Workload management','Services & networking','Storage','Troubleshooting','Security'] },
-  { id:'5', slug:'aws-cloud-practitioner',title:'AWS Certified Cloud Practitioner (CLF-C02)',             category:'Cloud',       price:14.99, students:23000, questions:300, description:'Entry-level AWS certification covering cloud concepts, services, pricing, and support.',                                                 learns:['Cloud concepts','AWS infrastructure','Core services','Security','Billing','Support plans'] },
-  { id:'6', slug:'pmp-certification',     title:'Project Management Professional (PMP)',                  category:'Agile',       price:39.99, students:5400,  questions:420, description:'Complete PMP prep covering predictive, agile, and hybrid project management.',                                                           learns:['Predictive approaches','Agile methods','Stakeholder management','Risk management','Procurement','Leadership'] },
-  { id:'7', slug:'mongodb-associate',     title:'MongoDB Associate Developer',                            category:'Database',    price:22.99, students:3800,  questions:200, description:'MongoDB developer exam prep covering CRUD, data modeling, indexes, aggregation, and Atlas.',                                              learns:['CRUD operations','Data modeling','Indexing','Aggregation pipeline','Atlas features','Performance'] },
-  { id:'8', slug:'ccna-networking',       title:'Cisco CCNA 200-301',                                     category:'Networking',  price:27.99, students:7200,  questions:320, description:'CCNA 200-301 prep covering network fundamentals, IP connectivity, security, and automation.',                                              learns:['Network fundamentals','IP services','Security fundamentals','Automation','Routing protocols','WAN'] },
+  { 
+    id:'1', 
+    slug:'aws-certified-solutions-architect-associate-saa-c03', 
+    title:'AWS Certified Solutions Architect – Associate (SAA-C03)', 
+    category:'Cloud', 
+    price:29.99, 
+    students:12400, 
+    questions:360, 
+    description:'Master AWS architecture patterns with hands-on practice. Covers EC2, S3, VPC, RDS, Lambda, CloudFront, and all SAA-C03 exam domains.', 
+    learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'] 
+  },
+  { 
+    id:'4', 
+    slug:'aws-certified-cloud-practitioner-clf-c02', 
+    title:'AWS Certified Cloud Practitioner (CLF-C02)', 
+    category:'Cloud', 
+    price:14.99, 
+    students:23000, 
+    questions:300, 
+    description:'Entry-level AWS certification covering cloud concepts, services, pricing, and support.', 
+    learns:['Cloud concepts','AWS infrastructure','Core services','Security','Billing','Support plans'] 
+  },
+  { 
+    id:'5', 
+    slug:'professional-scrum-master-i-psm-i', 
+    title:'Professional Scrum Master I (PSM I)', 
+    category:'Agile', 
+    price:15.00, 
+    students:15000, 
+    questions:80, 
+    description:'Fundamental knowledge of the Scrum framework and how to apply it in real-world situations.', 
+    learns:['Scrum Theory','Scrum Framework','Product Backlog management','Sprint management','Scrum Roles'] 
+  },
 ];
 
 const MOCK_PACKAGES = Array.from({length:6}, (_, i) => ({
@@ -169,7 +202,7 @@ const Utils = {
     else if (page === 'my-learning') window.location.href = '/pages/my-learning.html';
     else if (page === 'exam-detail') {
       const slug = params.slug || params.exam?.slug;
-      window.location.href = `/pages/exam-detail.html?slug=${slug}`;
+      window.location.href = `/detail/${slug}`;
     } else if (page === 'exam-quiz') {
       const slug = params.exam?.slug || params.slug;
       const pkgId = params.pkg?.id || params.pkgId;

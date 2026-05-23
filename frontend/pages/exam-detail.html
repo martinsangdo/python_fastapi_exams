@@ -207,19 +207,13 @@
             <h1 class="ep-title">${exam.title}</h1>
             <p class="ep-desc">${exam.description}</p>
             <div class="ep-meta">
-              <span class="ep-meta-item">
-                <span class="ep-rating-val">${exam.rating}</span>
-                <span class="ep-rating-stars">${'★'.repeat(Math.round(exam.rating))}</span>
-                <span>(${Utils.formatNumber(exam.students)} students)</span>
-              </span>
-              <span class="ep-meta-item">${svgBook(14)} ${exam.packages} tests</span>
+              <span class="ep-meta-item">${Utils.formatNumber(exam.students)} students enrolled</span>
               <span class="ep-meta-item">${svgAward(14)} ${exam.questions}+ questions</span>
             </div>
           </div>
-          <div class="ep-by">By <strong>${exam.instructor}</strong></div>
         </div>
         <div class="ep-right">
-          <div class="ep-emoji-zone"><span class="ep-emoji-inner">${exam.emoji}</span></div>
+          <div class="ep-emoji-zone"><span class="ep-emoji-inner">🎯</span></div>
           <div class="ep-price-strip">
             <div>
               <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>
@@ -240,20 +234,18 @@
       const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
       return `
       <div class="ep-stats-bar">
-        <div class="ep-stat"><div class="ep-stat-val">${exam.packages}</div><div class="ep-stat-lbl">Practice Tests</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${MOCK_PACKAGES.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>
         <div class="ep-stat"><div class="ep-stat-val">${exam.questions}+</div><div class="ep-stat-lbl">Questions</div></div>
         <div class="ep-stat"><div class="ep-stat-val">90</div><div class="ep-stat-lbl">Min / Test</div></div>
         <div class="ep-stat"><div class="ep-stat-val">72%</div><div class="ep-stat-lbl">Pass Score</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${done}/${exam.packages}</div><div class="ep-stat-lbl">Completed</div></div>
         ${avg!==null?`<div class="ep-stat"><div class="ep-stat-val" style="color:var(--acc-m)">${avg}%</div><div class="ep-stat-lbl">Avg Score</div></div>`:''}
-        <div class="ep-stat"><div class="ep-stat-val" style="color:#ba7517">${exam.rating}</div><div class="ep-stat-lbl">Rating</div></div>
       </div>`;
     }
 
     /* RAIL */
     function renderRail(purchased) {
       const done = Object.values(SCORES).filter(s=>s!==null).length;
-      const pct = Math.round(done/exam.packages*100);
+      const pct = Math.round(done/MOCK_PACKAGES.length*100);
       return `
       <aside class="ep-rail">
         <div class="ep-rail-label">Test Packages</div>
@@ -274,7 +266,7 @@
         <div class="ep-rail-prog">
           <div class="ep-rail-prog-lbl">Overall Progress</div>
           <div class="ep-rail-track"><div class="ep-rail-fill" style="width:${pct}%"></div></div>
-          <div class="ep-rail-pct">${done} of ${exam.packages} completed</div>
+          <div class="ep-rail-pct">${done} of ${MOCK_PACKAGES.length} completed</div>
         </div>
       </aside>`;
     }
@@ -368,16 +360,11 @@
       <div style="margin-bottom:40px">
         <div class="ep-sh">Instructor</div>
         <div class="ep-inst-band">
-          <div class="ep-inst-av">C</div>
+          <div class="ep-inst-av">E</div>
           <div>
-            <div class="ep-inst-name">${exam.instructor}</div>
-            <div class="ep-inst-role">Senior Cloud &amp; Security Architect</div>
-            <div class="ep-inst-bio">10+ years helping engineers pass certification exams. Specialises in AWS, Kubernetes, and security frameworks across 8 courses.</div>
-          </div>
-          <div class="ep-inst-stats">
-            <div style="text-align:center"><div class="ep-inst-sv">50K+</div><div class="ep-inst-sl">Students</div></div>
-            <div style="text-align:center"><div class="ep-inst-sv">4.9</div><div class="ep-inst-sl">Rating</div></div>
-            <div style="text-align:center"><div class="ep-inst-sv">8</div><div class="ep-inst-sl">Courses</div></div>
+            <div class="ep-inst-name">ExamPrep Team</div>
+            <div class="ep-inst-role">Professional Certification Experts</div>
+            <div class="ep-inst-bio">Our team of certified architects and engineers meticulously craft every question to ensure it matches the real exam standards.</div>
           </div>
         </div>
       </div>`;
@@ -396,8 +383,8 @@
         <div class="ep-sh">Reviews</div>
         <div class="ep-rat-box">
           <div class="ep-rat-big">
-            <div class="ep-rat-num">${exam.rating}</div>
-            <div class="ep-rat-stars">${'★'.repeat(Math.round(exam.rating))}</div>
+            <div class="ep-rat-num">4.8</div>
+            <div class="ep-rat-stars">★★★★★</div>
             <div class="ep-rat-lbl">Course Rating</div>
           </div>
           <div style="flex:1">
@@ -432,8 +419,8 @@
       return `
       <div class="ep-cta">
         <div>
-          <div class="ep-cta-h">Ready to pass ${exam.title.split(' ').slice(0,4).join(' ')}?</div>
-          <div class="ep-cta-sub">All ${exam.packages} practice tests · 30-day money-back guarantee</div>
+          <div class="ep-cta-h">Ready to pass this exam?</div>
+          <div class="ep-cta-sub">All ${MOCK_PACKAGES.length} practice tests · 30-day money-back guarantee</div>
         </div>
         <div class="ep-cta-right">
           <div class="ep-cta-price">${Utils.formatPrice(exam.price)}</div>
@@ -497,14 +484,21 @@
       document.getElementById('unlock-btn')?.addEventListener('click', doEnroll);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       State.init(); Toast.init();
       Nav.render('');
       Footer.render();
-      const slug = Utils.getParam('slug') || 'aws-saa-c03';
-      exam = MOCK_EXAMS.find(e=>e.slug===slug) || MOCK_EXAMS[0];
-      document.title = exam.title + ' — ExamPrep';
-      buildPage();
+      
+      const pathParts = window.location.pathname.split('/');
+      const slug = pathParts[pathParts.indexOf('detail') + 1];
+
+      try {
+        exam = await API.exams.get(slug);
+        document.title = exam.title + ' — ExamPrep';
+        buildPage();
+      } catch (err) {
+        document.getElementById('page-main').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">Exam Not Found</h2><p class="t-muted mt-8">${err.message}</p></div>`;
+      }
     });
   </script>
 </body>

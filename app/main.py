@@ -4,6 +4,7 @@ app/main.py  —  FastAPI application entry point (MVC: Router/Controller layer)
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 import os, structlog
 
@@ -77,6 +78,12 @@ def create_app() -> FastAPI:
     app.include_router(ai_router,       prefix=prefix)
     app.include_router(users_router,    prefix=prefix)
     app.include_router(rag_router,      prefix=prefix)
+
+    # ── Serve Exam Detail Page ───────────────────────────────────
+    @app.get("/detail/{slug}", include_in_schema=False)
+    async def serve_exam_detail(slug: str):
+        frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+        return FileResponse(os.path.join(frontend_path, "pages", "exam-detail.html"))
 
     # ── Serve frontend static files ───────────────────────────────
     frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")

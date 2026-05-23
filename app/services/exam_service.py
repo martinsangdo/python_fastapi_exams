@@ -81,13 +81,50 @@ async def get_exam_by_slug(slug: str) -> Optional[dict]:
         return cached
 
     db = get_db()
-    exam = await db.exams.find_one({"slug": slug})
-    if not exam:
-        return None
+    # 1. Try finding by slug in the metadata table first
+    query = {"slug": slug}
+    meta = await db.tb_cert_metadata.find_one(query)
+    
+    # Fallback: if no direct slug match, try matching the slug against the certification name
+    if not meta:
+        # Replace hyphens with spaces to match against titles/names
+        search_name = slug.replace('-', ' ')
+        meta = await db.tb_cert_metadata.find_one({"name": {"$regex": f".*{search_name}.*", "$options": "i"}})
 
-    result = _serialize(exam)
+    if meta:
+        # Use the linked exam ID to get full exam details
+        exam_id = meta.get("id")
+        exam = await db.exams.find_one({"_id": ObjectId(exam_id)}) if exam_id else None
+        if exam:
+            result = _transform_cert(_serialize(exam))
+        else:
+            # Fallback to metadata if the main exam record is missing
+            result = _transform_cert(_serialize(meta))
+    else:
+        # 2. Fallback to direct slug search in the exams collection
+        exam = await db.exams.find_one({"slug": slug})
+        if not exam:
+            return None
+        result = _transform_cert(_serialize(exam))
+
     await cache_set(cache_key, result, ttl=300)
     return result
+
+
+def _transform_cert(cert: dict) -> dict:
+    """Standardize exam/certification object for frontend consumption."""
+    category = cert.get("category", "Other")
+    return {
+        "id": cert.get("id") or str(cert.get("_id")),
+        "slug": cert.get("slug") or "",
+        "title": cert.get("name") or cert.get("title") or "Untitled",
+        "category": category,
+        "description": cert.get("short_brief") or cert.get("description") or "",
+        "price": cert.get("price_usd") or cert.get("price") or 29.99,
+        "students": cert.get("students", 0),
+        "questions": cert.get("multi_choice_questions") or cert.get("total_questions", 0),
+        "learns": cert.get("learns", []),
+    }
 
 
 async def list_cert_categories() -> list[str]:
@@ -116,26 +153,17 @@ async def list_certifications() -> dict:
     
     # Group by category
     by_category = {}
+    all_transformed = []
     for cert in certs:
         category = cert.get("category", "Other")
         if category not in by_category:
             by_category[category] = []
         
-        # Transform cert metadata to frontend format
-        cert_display = {
-            "id": cert["id"],
-            "slug": cert.get("slug"),
-            "title": cert.get("name"),
-            "category": category,
-            "description": cert.get("short_brief", ""),
-            "price": cert.get("price", 29.99),
-            "students": cert.get("students", 0),
-            "questions": cert.get("multi_choice_questions", 0),
-            "learns": [],
-        }
+        cert_display = _transform_cert(cert)
         by_category[category].append(cert_display)
+        all_transformed.append(cert_display)
     
-    result = {"by_category": by_category, "all": certs}
+    result = {"by_category": by_category, "all": all_transformed}
     await cache_set(cache_key, result, ttl=600)
     return result
 

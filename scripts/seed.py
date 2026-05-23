@@ -42,6 +42,22 @@ SAMPLE_EXAMS = [
         "price_usd": 19.99,
         "tags": ["python", "programming", "oop", "async"],
     },
+    {
+        "title": "AWS Certified Cloud Practitioner (CLF-C02)",
+        "slug": "aws-certified-cloud-practitioner-clf-c02",
+        "description": "Entry-level AWS certification covering cloud concepts, security, technology, and billing.",
+        "category": "Cloud",
+        "price_usd": 14.99,
+        "tags": ["aws", "cloud", "practitioner"],
+    },
+    {
+        "title": "Professional Scrum Master I (PSM I)",
+        "slug": "professional-scrum-master-i-psm-i",
+        "description": "Fundamental knowledge of the Scrum framework and how to apply it in real-world situations.",
+        "category": "Agile",
+        "price_usd": 15.00,
+        "tags": ["scrum", "agile", "psm"],
+    },
 ]
 
 SAMPLE_QUESTIONS = {
@@ -84,6 +100,32 @@ SAMPLE_QUESTIONS = {
             "difficulty": "easy",
         },
     ],
+    "aws-certified-cloud-practitioner-clf-c02": [
+        {
+            "text": "Which AWS service is used for automated security assessments?",
+            "type": "single",
+            "options": [
+                {"key": "A", "text": "Amazon Inspector", "is_correct": True},
+                {"key": "B", "text": "AWS Shield", "is_correct": False},
+            ],
+            "explanation": "Amazon Inspector is an automated security assessment service.",
+            "tags": ["security", "inspector"],
+            "difficulty": "easy",
+        },
+    ],
+    "professional-scrum-master-i-psm-i": [
+        {
+            "text": "Who is responsible for managing the Product Backlog?",
+            "type": "single",
+            "options": [
+                {"key": "A", "text": "The Product Owner", "is_correct": True},
+                {"key": "B", "text": "The Scrum Master", "is_correct": False},
+            ],
+            "explanation": "The Product Owner is the sole person responsible for managing the Product Backlog.",
+            "tags": ["scrum", "roles"],
+            "difficulty": "easy",
+        },
+    ],
     "python-professional": [
         {
             "text": "Which data structure provides O(1) average time complexity for both insertion and lookup by key?",
@@ -122,7 +164,7 @@ async def seed():
     print(f"Seeding database: {settings.MONGODB_DB_NAME}")
 
     # Clear existing data
-    for collection in ["users", "exams", "packages", "questions", "attempts", "purchases"]:
+    for collection in ["users", "exams", "packages", "questions", "attempts", "purchases", "tb_cert_metadata"]:
         await db[collection].delete_many({})
     print("  ✓ Cleared existing data")
 
@@ -197,6 +239,20 @@ async def seed():
             {"_id": exam_result.inserted_id},
             {"$set": {"total_questions": total_questions}},
         )
+
+        # Sync to metadata table for catalog browsing
+        metadata = {
+            "id": exam_id,
+            "slug": exam_data["slug"],
+            "name": exam_data["title"],
+            "category": exam_data["category"],
+            "short_brief": exam_data["description"],
+            "price": exam_data["price_usd"],
+            "students": 1200,
+            "multi_choice_questions": total_questions
+        }
+        await db.tb_cert_metadata.insert_one(metadata)
+
         print(f"  ✓ Exam: {exam_data['title']} ({total_questions} questions)")
 
     # Grant student access to first exam
