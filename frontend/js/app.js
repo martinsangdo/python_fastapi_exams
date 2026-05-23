@@ -167,7 +167,8 @@ let MOCK_EXAMS = [
     students:12400, 
     questions:360, 
     description:'Master AWS architecture patterns with hands-on practice. Covers EC2, S3, VPC, RDS, Lambda, CloudFront, and all SAA-C03 exam domains.', 
-    learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'] 
+    learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'],
+    requirements:['Basic understanding of cloud computing concepts', 'Experience with virtualization is helpful']
   },
   { 
     id:'4', 
@@ -178,7 +179,8 @@ let MOCK_EXAMS = [
     students:23000, 
     questions:300, 
     description:'Entry-level AWS certification covering cloud concepts, services, pricing, and support.', 
-    learns:['Cloud concepts','AWS infrastructure','Core services','Security','Billing','Support plans'] 
+    learns:['Cloud concepts','AWS infrastructure','Core services','Security','Billing','Support plans'],
+    requirements:['No prior technical background required']
   },
   { 
     id:'5', 
@@ -189,7 +191,8 @@ let MOCK_EXAMS = [
     students:15000, 
     questions:80, 
     description:'Fundamental knowledge of the Scrum framework and how to apply it in real-world situations.', 
-    learns:['Scrum Theory','Scrum Framework','Product Backlog management','Sprint management','Scrum Roles'] 
+    learns:['Scrum Theory','Scrum Framework','Product Backlog management','Sprint management','Scrum Roles'],
+    requirements:['Familiarity with software development lifecycle (SDLC)']
   },
 ];
 

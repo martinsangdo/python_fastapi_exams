@@ -95,11 +95,13 @@ async def get_exam_by_slug(slug: str) -> Optional[dict]:
         # Use the linked exam ID to get full exam details
         exam_id = meta.get("id")
         exam = await db.exams.find_one({"_id": ObjectId(exam_id)}) if exam_id else None
+        
+        # Merge metadata and main exam record to ensure fields like 'duration' 
+        # and 'disclaimer' (which only exist in metadata) are preserved.
+        combined_data = _serialize(meta)
         if exam:
-            result = _transform_cert(_serialize(exam))
-        else:
-            # Fallback to metadata if the main exam record is missing
-            result = _transform_cert(_serialize(meta))
+            combined_data.update(_serialize(exam))
+        result = _transform_cert(combined_data)
     else:
         # 2. Fallback to direct slug search in the exams collection
         exam = await db.exams.find_one({"slug": slug})
@@ -114,6 +116,9 @@ async def get_exam_by_slug(slug: str) -> Optional[dict]:
 def _transform_cert(cert: dict) -> dict:
     """Standardize exam/certification object for frontend consumption."""
     category = cert.get("category", "Other")
+    # Ensure we capture question count from all possible field names used in different collections
+    total_q = cert.get("multi_choice_questions") or cert.get("total_questions") or cert.get("questions", 0)
+    
     return {
         "id": cert.get("id") or str(cert.get("_id")),
         "slug": cert.get("slug") or "",
@@ -122,9 +127,10 @@ def _transform_cert(cert: dict) -> dict:
         "description": cert.get("short_brief") or cert.get("description") or "",
         "price": cert.get("price_usd") or cert.get("price") or 29.99,
         "students": cert.get("students", 0),
-        "questions": cert.get("multi_choice_questions") or cert.get("total_questions", 0),
-        "learns": cert.get("learns", []),
-        "duration": cert.get("duration", 0),
+        "questions": total_q,
+        "learns": cert.get("what_learn") or cert.get("learns") or [],
+        "requirements": cert.get("requirements") or [],
+        "duration": cert.get("duration") or cert.get("time_limit_minutes") or 0,
         "disclaimer": cert.get("disclaimer", ""),
     }
 
@@ -224,7 +230,14 @@ async def list_packages(exam_id: str) -> list[dict]:
 
     db = get_db()
     cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
-    packages = [_serialize(p) async for p in cursor]
+    packages = []
+    async for p in cursor:
+        pkg = _serialize(p)
+        # Add aliases for frontend consistency with the main exam header
+        pkg["duration"] = pkg.get("time_limit_minutes", 0)
+        pkg["questions"] = pkg.get("question_count", 0)
+        packages.append(pkg)
+        
     await cache_set(cache_key, packages, ttl=300)
     return packages
 

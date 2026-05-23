@@ -251,7 +251,9 @@ async def seed():
             "students": 1200,
             "multi_choice_questions": total_questions,
             "duration": 90,
-            "disclaimer": "These practice tests are for educational purposes only and are intended to help you prepare for the certification exam."
+            "disclaimer": "These practice tests are for educational purposes only and are intended to help you prepare for the certification exam.",
+            "what_learn": [f"Master {exam_data['category']} concepts", "Pass the certification on your first try", "Practical hands-on knowledge"],
+            "requirements": ["Basic understanding of IT concepts", "Willingness to learn and practice"]
         }
         await db.tb_cert_metadata.insert_one(metadata)
 

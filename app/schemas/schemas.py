@@ -128,6 +128,10 @@ class ExamSummary(BaseModel):
 
 
 class ExamDetail(ExamSummary):
+    duration: int = 0
+    disclaimer: str = ""
+    learns: List[str] = []
+    requirements: List[str] = []
     created_at: datetime
     updated_at: datetime
 
@@ -145,6 +149,8 @@ class CertMetadataCreate(BaseModel):
     slug: str = Field(..., pattern=r"^[a-z0-9-]+$", max_length=100)
     duration: int = Field(0, ge=0, description="Duration in minutes")
     disclaimer: str = Field("", max_length=5000)
+    what_learn: List[str] = []
+    requirements: List[str] = []
 
 
 class CertMetadataResponse(CertMetadataCreate):
