@@ -147,6 +147,16 @@
 
   <script src="/js/app.js"></script>
   <script>
+    function toSnakeCase(str) {
+      if (!str) return '';
+      if (str === 'AI') return str;
+      return str
+        .toLowerCase()
+        .trim()
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     let exam = null;
     let openPkg = null;
     const SCORES = {'pkg-1':84,'pkg-2':null,'pkg-3':null,'pkg-4':null,'pkg-5':null,'pkg-6':null};
@@ -179,7 +189,7 @@
       <section class="ep-hero">
         <div class="ep-left">
           <div>
-            <div class="ep-cat">${exam.category}</div>
+            <div class="ep-cat">${toSnakeCase(exam.category)}</div>
             <h1 class="ep-title">${exam.title}</h1>
             <p class="ep-desc">${exam.description}</p>
             <div class="ep-meta">

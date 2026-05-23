@@ -126,6 +126,21 @@ async function loadCategories() {
 }
 
 async function loadCertifications() {
+  const CACHE_KEY = 'ep_home_certs';
+  const EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+
+  // Try to load from cache first
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < EXPIRY) {
+        MOCK_EXAMS = parsed.data;
+        return; // Use cache and skip fetch
+      }
+    } catch (e) { localStorage.removeItem(CACHE_KEY); }
+  }
+
   const loadingIconContainer = document.querySelector('.loading-icon-container');
   if (loadingIconContainer) {
     const loadingIcon = loadingIconContainer.querySelector('.loading-icon');
@@ -150,6 +165,9 @@ async function loadCertifications() {
         description: cert.description,
         learns: cert.learns || [],
       }));
+
+      // Update Cache
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: MOCK_EXAMS }));
     }
   } catch (err) {
     console.warn('Could not load certifications from database, using mock data.', err);
