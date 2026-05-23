@@ -50,19 +50,29 @@ A full-stack exam preparation platform built with **FastAPI + MongoDB**, demonst
 ## Quick Start
 
 ```bash
-# 1. Clone and configure
+# 1. Create a clean virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+
+# 2. Clone and configure
 cp .env.example .env          # fill in your keys
 
-# 2. Run everything
+# 3. Install dependencies
+pip install -r requirements.txt
+
+# 4. Run everything
 docker compose up --build
 
-# 3. Seed sample data
+# 5. Seed sample data
 docker compose exec api python scripts/seed.py
 
-# 4. Visit
+# 6. Visit
 # API docs:  http://localhost:8000/docs
 # Grafana:   http://localhost:3000  (admin/admin)
 ```
+
+> Use a dedicated virtual environment to avoid conflicts with globally installed packages. If pip reports dependency resolver warnings, they are usually caused by packages already installed in your system Python environment.
 
 ---
 

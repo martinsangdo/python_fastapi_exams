@@ -29,7 +29,8 @@ class Settings(BaseSettings):
 
     # MongoDB (CP system — consistent reads, partition tolerant)
     MONGODB_URL: str = "mongodb://localhost:27017"
-    MONGODB_DB_NAME: str = "examprep"
+    REMOTE_MONGO_DB: str | None = None
+    MONGODB_DB_NAME: str = "db_certificates"
 
     # Redis cache
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -58,7 +59,10 @@ class Settings(BaseSettings):
 
 @lru_cache()  # AHA principle: compute once, reuse everywhere
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.REMOTE_MONGO_DB:
+        settings.MONGODB_URL = settings.REMOTE_MONGO_DB
+    return settings
 
 
 settings = get_settings()

@@ -14,7 +14,8 @@ Collections:
   leaderboard  — aggregated top scores per exam
 """
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict
+from uuid import uuid4
 from bson import ObjectId
 
 
@@ -71,6 +72,34 @@ def new_exam(
     }
 
 
+def new_cert_metadata(
+    name: str,
+    collection_name: str,
+    symbol: str,
+    prompt_context: str,
+    multi_choice_prompt_prefix: str,
+    multi_choice_questions: int,
+    multi_selection_prompt_prefix: str,
+    category: str,
+    short_brief: str,
+    slug: str,
+) -> dict:
+    return {
+        "name": name,
+        "collection_name": collection_name,
+        "symbol": symbol,
+        "prompt_context": prompt_context,
+        "multi_choice_prompt_prefix": multi_choice_prompt_prefix,
+        "multi_choice_questions": multi_choice_questions,
+        "multi_selection_prompt_prefix": multi_selection_prompt_prefix,
+        "category": category,
+        "short_brief": short_brief,
+        "slug": slug,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
 # ─── Package ──────────────────────────────────────────────────────────────────
 def new_package(
     exam_id: str,
@@ -116,6 +145,30 @@ def new_question(
         "difficulty": difficulty,
         "times_answered": 0,            # for analytics
         "times_correct": 0,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
+def new_cert_question(
+    question: str,
+    options: Dict[str, str],
+    answer: str,
+    explanation: Dict[str, str],
+    q_type: str = "multiple-choice",
+    domain: int = 1,
+    exported: int = 0,
+    uuid: str | None = None,
+) -> dict:
+    return {
+        "question": question,
+        "options": options,
+        "answer": answer,
+        "explanation": explanation,
+        "type": q_type,
+        "domain": domain,
+        "exported": exported,
+        "uuid": uuid or str(uuid4()),
         "created_at": utcnow(),
         "updated_at": utcnow(),
     }

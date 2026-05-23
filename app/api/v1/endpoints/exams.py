@@ -26,6 +26,11 @@ async def list_exams(
     return await exam_service.list_exams(category=category, page=page, page_size=page_size)
 
 
+@router.get("/categories")
+async def list_categories():
+    return {"categories": await exam_service.list_cert_categories()}
+
+
 @router.get("/autocomplete")
 async def autocomplete(q: str = Query(..., min_length=1)):
     return {"results": await exam_service.autocomplete_exams(q)}

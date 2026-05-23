@@ -90,6 +90,19 @@ async def get_exam_by_slug(slug: str) -> Optional[dict]:
     return result
 
 
+async def list_cert_categories() -> list[str]:
+    cache_key = CacheKeys.CERT_METADATA_CATEGORIES
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    categories = await db.tb_cert_metadata.distinct("category", {"category": {"$exists": True, "$ne": ""}})
+    categories = [c for c in categories if isinstance(c, str)]
+    await cache_set(cache_key, categories, ttl=600)
+    return categories
+
+
 async def update_exam(exam_id: str, data: ExamUpdate) -> Optional[dict]:
     db = get_db()
     updates = {k: v for k, v in data.model_dump().items() if v is not None}

@@ -96,6 +96,7 @@ class CacheKeys:
     QUESTION_LIST = "questions:package:{package_id}"
     LEADERBOARD = "leaderboard:exam:{exam_id}:top{n}"
     USER_PURCHASES = "purchases:user:{user_id}"
+    CERT_METADATA_CATEGORIES = "cert_metadata:categories"
     AI_HINT = "ai:hint:q:{question_id}:u:{user_id}"   # short TTL — personalized
     AI_EXPLAIN = "ai:explain:q:{question_id}"          # longer TTL — shared
 

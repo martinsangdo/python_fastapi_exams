@@ -5,7 +5,7 @@ Pydantic v2 schemas for request validation and response shaping.
 Pydantic: Module 1 (FastAPI MVC) — validate input/output automatically.
 """
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
 
@@ -132,6 +132,25 @@ class ExamDetail(ExamSummary):
     updated_at: datetime
 
 
+class CertMetadataCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=300)
+    collection_name: str = Field(..., min_length=3, max_length=100)
+    symbol: str = Field(..., min_length=2, max_length=50)
+    prompt_context: str = Field(..., min_length=20, max_length=20000)
+    multi_choice_prompt_prefix: str = Field(..., min_length=10, max_length=2000)
+    multi_choice_questions: int = Field(..., ge=0, le=200)
+    multi_selection_prompt_prefix: str = Field(..., min_length=10, max_length=2000)
+    category: str = Field(..., min_length=2, max_length=100)
+    short_brief: str = Field(..., min_length=10, max_length=2000)
+    slug: str = Field(..., pattern=r"^[a-z0-9-]+$", max_length=100)
+
+
+class CertMetadataResponse(CertMetadataCreate):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+
 class ExamListResponse(BaseModel):
     items: List[ExamSummary]
     total: int
@@ -184,6 +203,23 @@ class QuestionCreate(BaseModel):
         if not any(o.is_correct for o in v):
             raise ValueError("At least one option must be correct")
         return v
+
+
+class CertQuestionCreate(BaseModel):
+    question: str = Field(..., min_length=10, max_length=3000)
+    options: Dict[str, str] = Field(..., min_length=2)
+    answer: str = Field(..., pattern=r"^[A-E]$")
+    explanation: Dict[str, str] = Field(..., min_length=2)
+    type: str = Field("multiple-choice", pattern=r"^(multiple-choice|single-choice|true-false)$")
+    domain: int = Field(..., ge=1)
+    exported: int = Field(0, ge=0)
+    uuid: str = Field(..., min_length=1)
+
+
+class CertQuestionResponse(CertQuestionCreate):
+    id: str
+    created_at: datetime
+    updated_at: datetime
 
 
 class QuestionPublic(BaseModel):
