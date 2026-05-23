@@ -128,14 +128,9 @@ async def list_certifications() -> dict:
             "title": cert.get("name"),
             "category": category,
             "description": cert.get("short_brief", ""),
-            "price": 29.99,  # Default price
-            "rating": 4.7,   # Default rating
-            "students": 5000,  # Default students
-            "packages": 6,     # Default packages
+            "price": cert.get("price", 29.99),
+            "students": cert.get("students", 0),
             "questions": cert.get("multi_choice_questions", 0),
-            "instructor": "Exam Prep Team",
-            "badge": None,
-            "emoji": _get_category_emoji(category),
             "learns": [],
         }
         by_category[category].append(cert_display)
@@ -143,28 +138,6 @@ async def list_certifications() -> dict:
     result = {"by_category": by_category, "all": certs}
     await cache_set(cache_key, result, ttl=600)
     return result
-
-
-def _get_category_emoji(category: str) -> str:
-    """Map category names to emojis."""
-    # Normalize the category for emoji mapping
-    normalized = category.upper().replace("_", "").replace(" ", "").replace("-", "")
-    
-    emoji_map = {
-        "CLOUD": "☁️",
-        "SECURITY": "🔐",
-        "PROGRAMMING": "🐍",
-        "DEVOPS": "⚙️",
-        "AGILE": "📋",
-        "DATABASE": "🍃",
-        "NETWORKING": "🌐",
-        "AI": "🤖",
-        "PROJECTMANAGEMENT": "📋",
-        "DATAENGINEER": "🗄️",
-        "SOLUTIONSARCHITECT": "🏗️",
-        "DIGITALINTELLIGENCE": "🧠",
-    }
-    return emoji_map.get(normalized, "📚")
 
 
 async def update_exam(exam_id: str, data: ExamUpdate) -> Optional[dict]:

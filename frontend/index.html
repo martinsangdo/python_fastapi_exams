@@ -169,14 +169,8 @@ async function loadCertifications() {
         slug: cert.slug,
         title: cert.name,
         category: cert.category,
-        price: 29.99,
-        rating: 4.7,
-        students: 5000,
-        packages: 6,
-        questions: cert.multi_choice_questions || 0,
-        instructor: 'Exam Prep Team',
-        badge: null,
-        emoji: getCategoryEmoji(cert.category),
+        price: cert.price || 7.99,
+        students: cert.students || 0,
         description: cert.short_brief || '',
         learns: [],
       }));
@@ -189,24 +183,6 @@ async function loadCertifications() {
     const loadingIcon = loadingIconContainer.querySelector('.loading-icon');
     loadingIcon.style.display = 'none';
   }
-}
-
-function getCategoryEmoji(category) {
-  const emojiMap = {
-    "Cloud": "☁️",
-    "Security": "🔐",
-    "Programming": "🐍",
-    "DevOps": "⚙️",
-    "Agile": "📋",
-    "Database": "🍃",
-    "Networking": "🌐",
-    "AI": "🤖",
-    "Project Management": "📋",
-    "Data Engineer": "🗄️",
-    "Solutions Architect": "🏗️",
-    "Digital Intelligence": "🧠",
-  };
-  return emojiMap[category] || "📚";
 }
 
 function getFiltered() {
@@ -226,25 +202,20 @@ function examCardHTML(exam) {
     <div class="exam-card-wrap">
       <div class="card exam-card" data-slug="${exam.slug}">
         <div class="exam-card-thumb">
-          <div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${exam.emoji}</div>
-          ${exam.badge ? `<div class="exam-card-badge"><span class="badge badge-gold">${exam.badge}</span></div>` : ''}
+          <div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)"></div>
         </div>
         <div class="exam-card-body">
           <div class="exam-card-title truncate-2">${exam.title}</div>
-          <div class="exam-card-instructor">${exam.instructor}</div>
           <div class="exam-card-meta">
-            <span class="exam-card-rating">${exam.rating}</span>
-            <span class="stars">${Utils.stars(exam.rating)}</span>
-            <span class="exam-card-count">(${Utils.formatNumber(exam.students)})</span>
+            <span class="exam-card-count">${Utils.formatNumber(exam.students)} students</span>
           </div>
           <div class="exam-card-footer">
             <span class="exam-card-price">${Utils.formatPrice(exam.price)}</span>
-            <span class="exam-card-meta-right">${Icons.book(13)} ${exam.packages} tests</span>
           </div>
         </div>
       </div>
       <div class="exam-card-popup">
-        <span class="badge badge-purple mb-8">${exam.category}</span>
+        <span class="badge badge-purple mb-8">${toSnakeCase(exam.category)}</span>
         <h3 class="t-h3" style="margin:6px 0 8px">${exam.title}</h3>
         <p class="t-sm t-muted mb-12">${exam.description}</p>
         ${(exam.learns||[]).slice(0,4).map(l=>`<div class="popup-feature">${Icons.check(13)} <span class="t-sm">${l}</span></div>`).join('')}
