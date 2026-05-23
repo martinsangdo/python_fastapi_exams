@@ -132,7 +132,7 @@ const API = {
 };
 
 /* ── Mock Data ── */
-const MOCK_EXAMS = [
+let MOCK_EXAMS = [
   { id:'1', slug:'aws-saa-c03',           title:'AWS Certified Solutions Architect – Associate (SAA-C03)', category:'Cloud',       price:29.99, rating:4.8, students:12400, packages:6, questions:360, instructor:'Martin Do', badge:'Bestseller', emoji:'☁️', description:'Master AWS architecture patterns with hands-on practice. Covers EC2, S3, VPC, RDS, Lambda, CloudFront, and all SAA-C03 exam domains.', learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'] },
   { id:'2', slug:'comptia-security-plus', title:'CompTIA Security+ SY0-701',                              category:'Security',    price:24.99, rating:4.7, students:8900,  packages:6, questions:300, instructor:'Martin Do', badge:'Hot',        emoji:'🔐', description:'Comprehensive Security+ prep covering threats, vulnerabilities, architecture, and compliance.',                                        learns:['Threat intelligence','Cryptography','Network security','Incident response','Risk management','Compliance'] },
   { id:'3', slug:'python-professional',   title:'Python Professional Developer Certification',            category:'Programming', price:19.99, rating:4.9, students:15200, packages:6, questions:240, instructor:'Martin Do', badge:'New',        emoji:'🐍', description:'Advanced Python exam prep covering OOP, async programming, DSA, testing, and system design.',                                           learns:['Advanced OOP','Async/await','Data structures','Testing with pytest','Design patterns','Performance'] },

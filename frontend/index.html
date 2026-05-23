@@ -103,6 +103,7 @@ let CATEGORIES = ['All'];
 let activeCat = 'All', searchQ = '';
 
 function toSnakeCase(str) {
+  if (str === 'AI') return str;
   return str
     .toLowerCase()
     .trim()
