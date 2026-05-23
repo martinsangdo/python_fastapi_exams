@@ -43,12 +43,6 @@
       <h2 class="t-h2" id="grid-title">All Certifications</h2>
       <p class="t-muted t-sm mt-4" id="grid-count"></p>
     </div>
-    <select class="select" id="sort-select" style="width:auto;padding:8px 32px 8px 14px">
-      <option value="popular">Most Popular</option>
-      <option value="rated">Highest Rated</option>
-      <option value="price-asc">Price: Low to High</option>
-      <option value="price-desc">Price: High to Low</option>
-    </select>
   </div>
   <div class="grid-4" id="exam-grid"></div>
 </div>
@@ -106,7 +100,15 @@
 <script src="/js/app.js"></script>
 <script>
 let CATEGORIES = ['All'];
-let activeCat = 'All', activeSort = 'popular', searchQ = '';
+let activeCat = 'All', searchQ = '';
+
+function toSnakeCase(str) {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
 
 async function loadCategories() {
   try {
@@ -121,6 +123,55 @@ async function loadCategories() {
   }
 }
 
+async function loadCertifications() {
+  try {
+    const resp = await fetch('/api/v1/exams/certifications');
+    if (!resp.ok) throw new Error('Failed to load certifications');
+    const data = await resp.json();
+    const allCerts = Array.isArray(data.all) ? data.all : [];
+    
+    // Transform and merge with MOCK_EXAMS
+    if (allCerts.length > 0) {
+      MOCK_EXAMS = allCerts.map((cert, idx) => ({
+        id: cert.id || String(idx + 1),
+        slug: cert.slug,
+        title: cert.name,
+        category: cert.category,
+        price: 29.99,
+        rating: 4.7,
+        students: 5000,
+        packages: 6,
+        questions: cert.multi_choice_questions || 0,
+        instructor: 'Exam Prep Team',
+        badge: null,
+        emoji: getCategoryEmoji(cert.category),
+        description: cert.short_brief || '',
+        learns: [],
+      }));
+    }
+  } catch (err) {
+    console.warn('Could not load certifications from database, using mock data.', err);
+  }
+}
+
+function getCategoryEmoji(category) {
+  const emojiMap = {
+    "Cloud": "☁️",
+    "Security": "🔐",
+    "Programming": "🐍",
+    "DevOps": "⚙️",
+    "Agile": "📋",
+    "Database": "🍃",
+    "Networking": "🌐",
+    "AI": "🤖",
+    "Project Management": "📋",
+    "Data Engineer": "🗄️",
+    "Solutions Architect": "🏗️",
+    "Digital Intelligence": "🧠",
+  };
+  return emojiMap[category] || "📚";
+}
+
 function getFiltered() {
   let exams = [...MOCK_EXAMS];
   if (activeCat !== 'All') exams = exams.filter(e => e.category === activeCat);
@@ -128,10 +179,7 @@ function getFiltered() {
     e.title.toLowerCase().includes(searchQ.toLowerCase()) ||
     e.category.toLowerCase().includes(searchQ.toLowerCase())
   );
-  if (activeSort === 'rated')      exams.sort((a,b) => b.rating - a.rating);
-  else if (activeSort === 'price-asc')  exams.sort((a,b) => a.price - b.price);
-  else if (activeSort === 'price-desc') exams.sort((a,b) => b.price - a.price);
-  else exams.sort((a,b) => b.students - a.students);
+  exams.sort((a,b) => b.students - a.students);
   return exams;
 }
 
@@ -173,7 +221,7 @@ function examCardHTML(exam) {
 
 function renderCatBar() {
   document.getElementById('cat-bar').innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-btn ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`
+    `<button class="cat-btn ${c===activeCat?'active':''}" data-cat="${c}">${c === 'All' ? 'All' : toSnakeCase(c)}</button>`
   ).join('');
   document.querySelectorAll('.cat-btn').forEach(btn =>
     btn.addEventListener('click', () => { activeCat = btn.dataset.cat; renderGrid(); renderCatBar(); })
@@ -182,7 +230,8 @@ function renderCatBar() {
 
 function renderGrid() {
   const exams = getFiltered();
-  document.getElementById('grid-title').textContent = activeCat==='All' ? 'All Certifications' : activeCat+' Certifications';
+  const catDisplay = activeCat === 'All' ? 'All Certifications' : toSnakeCase(activeCat) + ' Certifications';
+  document.getElementById('grid-title').textContent = catDisplay;
   document.getElementById('grid-count').textContent = exams.length + ' courses available';
   const grid = document.getElementById('exam-grid');
   if (!exams.length) {
@@ -201,9 +250,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   const urlQ = Utils.getParam('q');
   if (urlQ) { searchQ = urlQ; }
   await loadCategories();
+  await loadCertifications();
   renderCatBar();
   renderGrid();
-  document.getElementById('sort-select').addEventListener('change', e => { activeSort = e.target.value; renderGrid(); });
 });
 </script>
 </body>

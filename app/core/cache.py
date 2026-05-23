@@ -21,13 +21,41 @@ import structlog
 from app.core.config import settings
 
 log = structlog.get_logger()
-_redis: aioredis.Redis = None
+_redis: Any = None
+
+
+class NullCache:
+    async def get(self, key: str):
+        return None
+
+    async def setex(self, key: str, ttl: int, value: str):
+        return False
+
+    async def delete(self, *keys: str):
+        return 0
+
+    async def keys(self, pattern: str):
+        return []
+
+    async def exists(self, *keys: str):
+        return 0
+
+    async def ping(self):
+        return False
+
+    async def close(self):
+        return None
 
 
 async def init_cache():
     global _redis
-    _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
-    log.info("cache.connected", url=settings.REDIS_URL)
+    try:
+        _redis = aioredis.from_url(settings.REDIS_URL, decode_responses=True)
+        await _redis.ping()
+        log.info("cache.connected", url=settings.REDIS_URL)
+    except Exception as e:
+        log.warning("cache.disabled", url=settings.REDIS_URL, error=str(e))
+        _redis = NullCache()
 
 
 async def close_cache():
@@ -36,7 +64,10 @@ async def close_cache():
         await _redis.close()
 
 
-def get_cache() -> aioredis.Redis:
+def get_cache() -> Any:
+    global _redis
+    if _redis is None:
+        _redis = NullCache()
     return _redis
 
 
@@ -97,6 +128,7 @@ class CacheKeys:
     LEADERBOARD = "leaderboard:exam:{exam_id}:top{n}"
     USER_PURCHASES = "purchases:user:{user_id}"
     CERT_METADATA_CATEGORIES = "cert_metadata:categories"
+    CERT_METADATA_CERTIFICATIONS = "cert_metadata:certifications"
     AI_HINT = "ai:hint:q:{question_id}:u:{user_id}"   # short TTL — personalized
     AI_EXPLAIN = "ai:explain:q:{question_id}"          # longer TTL — shared
 

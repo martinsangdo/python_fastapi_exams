@@ -103,6 +103,70 @@ async def list_cert_categories() -> list[str]:
     return categories
 
 
+async def list_certifications() -> dict:
+    """Fetch all certifications from tb_cert_metadata grouped by category."""
+    cache_key = CacheKeys.CERT_METADATA_CERTIFICATIONS
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    cursor = db.tb_cert_metadata.find({})
+    certs = [_serialize(c) async for c in cursor]
+    
+    # Group by category
+    by_category = {}
+    for cert in certs:
+        category = cert.get("category", "Other")
+        if category not in by_category:
+            by_category[category] = []
+        
+        # Transform cert metadata to frontend format
+        cert_display = {
+            "id": cert["id"],
+            "slug": cert.get("slug"),
+            "title": cert.get("name"),
+            "category": category,
+            "description": cert.get("short_brief", ""),
+            "price": 29.99,  # Default price
+            "rating": 4.7,   # Default rating
+            "students": 5000,  # Default students
+            "packages": 6,     # Default packages
+            "questions": cert.get("multi_choice_questions", 0),
+            "instructor": "Exam Prep Team",
+            "badge": None,
+            "emoji": _get_category_emoji(category),
+            "learns": [],
+        }
+        by_category[category].append(cert_display)
+    
+    result = {"by_category": by_category, "all": certs}
+    await cache_set(cache_key, result, ttl=600)
+    return result
+
+
+def _get_category_emoji(category: str) -> str:
+    """Map category names to emojis."""
+    # Normalize the category for emoji mapping
+    normalized = category.upper().replace("_", "").replace(" ", "").replace("-", "")
+    
+    emoji_map = {
+        "CLOUD": "☁️",
+        "SECURITY": "🔐",
+        "PROGRAMMING": "🐍",
+        "DEVOPS": "⚙️",
+        "AGILE": "📋",
+        "DATABASE": "🍃",
+        "NETWORKING": "🌐",
+        "AI": "🤖",
+        "PROJECTMANAGEMENT": "📋",
+        "DATAENGINEER": "🗄️",
+        "SOLUTIONSARCHITECT": "🏗️",
+        "DIGITALINTELLIGENCE": "🧠",
+    }
+    return emoji_map.get(normalized, "📚")
+
+
 async def update_exam(exam_id: str, data: ExamUpdate) -> Optional[dict]:
     db = get_db()
     updates = {k: v for k, v in data.model_dump().items() if v is not None}
