@@ -143,6 +143,7 @@ class CertMetadataCreate(BaseModel):
     category: str = Field(..., min_length=2, max_length=100)
     short_brief: str = Field(..., min_length=10, max_length=2000)
     slug: str = Field(..., pattern=r"^[a-z0-9-]+$", max_length=100)
+    duration: int = Field(0, ge=0, description="Duration in minutes")
 
 
 class CertMetadataResponse(CertMetadataCreate):

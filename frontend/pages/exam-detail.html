@@ -194,7 +194,7 @@
             <p class="ep-desc">${exam.description}</p>
             <div class="ep-meta">
               <span class="ep-meta-item">${Utils.formatNumber(exam.students)} students enrolled</span>
-              <span class="ep-meta-item">${svgAward(14)} ${exam.questions}+ questions</span>
+              <span class="ep-meta-item">${svgAward(14)} ${exam.questions} questions</span>
             </div>
           </div>
         </div>
@@ -203,7 +203,6 @@
           <div class="ep-price-strip">
             <div>
               <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>
-              <div class="ep-price-orig">${Utils.formatPrice(exam.price*2)} original</div>
             </div>
             ${purchased
               ? `<button class="ep-enroll-btn owned" onclick="location='/pages/my-learning.html'">Go to My Learning →</button>`
@@ -221,8 +220,8 @@
       return `
       <div class="ep-stats-bar">
         <div class="ep-stat"><div class="ep-stat-val">${MOCK_PACKAGES.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${exam.questions}+</div><div class="ep-stat-lbl">Questions</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">90</div><div class="ep-stat-lbl">Min / Test</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${exam.questions}</div><div class="ep-stat-lbl">Questions</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${exam.duration}</div><div class="ep-stat-lbl">Min / Test</div></div>
         <div class="ep-stat"><div class="ep-stat-val">72%</div><div class="ep-stat-lbl">Pass Score</div></div>
         ${avg!==null?`<div class="ep-stat"><div class="ep-stat-val" style="color:var(--acc-m)">${avg}%</div><div class="ep-stat-lbl">Avg Score</div></div>`:''}
       </div>`;

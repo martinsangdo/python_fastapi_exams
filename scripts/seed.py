@@ -249,7 +249,8 @@ async def seed():
             "short_brief": exam_data["description"],
             "price": exam_data["price_usd"],
             "students": 1200,
-            "multi_choice_questions": total_questions
+            "multi_choice_questions": total_questions,
+            "duration": 90
         }
         await db.tb_cert_metadata.insert_one(metadata)
 

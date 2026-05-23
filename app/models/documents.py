@@ -83,6 +83,7 @@ def new_cert_metadata(
     category: str,
     short_brief: str,
     slug: str,
+    duration: int = 0,
 ) -> dict:
     return {
         "name": name,
@@ -95,6 +96,7 @@ def new_cert_metadata(
         "category": category,
         "short_brief": short_brief,
         "slug": slug,
+        "duration": duration,
         "created_at": utcnow(),
         "updated_at": utcnow(),
     }

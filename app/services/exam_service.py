@@ -124,6 +124,7 @@ def _transform_cert(cert: dict) -> dict:
         "students": cert.get("students", 0),
         "questions": cert.get("multi_choice_questions") or cert.get("total_questions", 0),
         "learns": cert.get("learns", []),
+        "duration": cert.get("duration", 0),
     }
 
 
