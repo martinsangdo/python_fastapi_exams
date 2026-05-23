@@ -79,6 +79,11 @@ def create_app() -> FastAPI:
     app.include_router(users_router,    prefix=prefix)
     app.include_router(rag_router,      prefix=prefix)
 
+    # ── Suppress Chrome DevTools Noise ───────────────────────────
+    @app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)
+    async def chrome_devtools_noise():
+        return {}
+
     # ── Serve Exam Detail Page ───────────────────────────────────
     @app.get("/detail/{slug}", include_in_schema=False)
     async def serve_exam_detail(slug: str):

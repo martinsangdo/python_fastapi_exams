@@ -144,6 +144,7 @@ class CertMetadataCreate(BaseModel):
     short_brief: str = Field(..., min_length=10, max_length=2000)
     slug: str = Field(..., pattern=r"^[a-z0-9-]+$", max_length=100)
     duration: int = Field(0, ge=0, description="Duration in minutes")
+    disclaimer: str = Field("", max_length=5000)
 
 
 class CertMetadataResponse(CertMetadataCreate):

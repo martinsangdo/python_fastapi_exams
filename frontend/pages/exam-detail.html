@@ -339,34 +339,13 @@
       </div>`;
     }
 
-    /* INSTRUCTOR */
-    function renderInstructor() {
+    /* disclaimer */
+    function renderDisclaimer() {
       return `
       <div style="margin-bottom:40px">
-        <div class="ep-sh">Instructor</div>
-        <div class="ep-inst-band">
-          <div class="ep-inst-av">E</div>
-          <div>
-            <div class="ep-inst-name">ExamPrep Team</div>
-            <div class="ep-inst-role">Professional Certification Experts</div>
-            <div class="ep-inst-bio">Our team of certified architects and engineers meticulously craft every question to ensure it matches the real exam standards.</div>
-          </div>
-        </div>
-      </div>`;
-    }
-
-    /* CTA STRIP */
-    function renderCta(purchased) {
-      if (purchased) return '';
-      return `
-      <div class="ep-cta">
-        <div>
-          <div class="ep-cta-h">Ready to pass this exam?</div>
-          <div class="ep-cta-sub">All ${MOCK_PACKAGES.length} practice tests · 30-day money-back guarantee</div>
-        </div>
-        <div class="ep-cta-right">
-          <div class="ep-cta-price">${Utils.formatPrice(exam.price)}</div>
-          <button class="ep-cta-btn" id="cta-enroll">Enroll Now</button>
+        <div class="ep-sh">LEGAL NOTICE & DISCLAIMER:</div>
+        <div class="ep-disclaimer">
+          <p>${exam.disclaimer}</p>
         </div>
       </div>`;
     }
@@ -377,8 +356,7 @@
       document.getElementById('page-main').innerHTML =
         renderHero(purchased)
         + renderStatsBar()
-        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderInstructor()}</div></div>`
-        + renderCta(purchased);
+        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderDisclaimer()}</div></div>`;
       bindAll(purchased);
     }
 

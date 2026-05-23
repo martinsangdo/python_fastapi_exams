@@ -250,7 +250,8 @@ async def seed():
             "price": exam_data["price_usd"],
             "students": 1200,
             "multi_choice_questions": total_questions,
-            "duration": 90
+            "duration": 90,
+            "disclaimer": "These practice tests are for educational purposes only and are intended to help you prepare for the certification exam."
         }
         await db.tb_cert_metadata.insert_one(metadata)
 
