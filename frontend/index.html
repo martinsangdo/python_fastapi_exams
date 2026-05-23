@@ -21,12 +21,6 @@
       </div>
       <h1 class="t-hero" style="color:#fff;margin-bottom:16px">Pass Your Certification<br><em>On the First Try</em></h1>
       <p class="hero-sub">Practice with real exam-style questions across Cloud, Security, DevOps, and more. Each course includes 6 full-length timed tests.</p>
-      <div class="hero-search-bar">
-        <span class="hero-search-icon">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
-        </span>
-        <input class="input" id="hero-search" placeholder="Search for a certification..."/>
-      </div>
       <div class="hero-stats">
         <div><div class="hero-stat-num">50K+</div><div class="hero-stat-lbl">Active learners</div></div>
         <div><div class="hero-stat-num">200+</div><div class="hero-stat-lbl">Practice tests</div></div>
@@ -192,10 +186,9 @@ document.addEventListener('DOMContentLoaded', () => {
   Nav.render('home');
   Footer.render();
   const urlQ = Utils.getParam('q');
-  if (urlQ) { searchQ = urlQ; document.getElementById('hero-search').value = urlQ; }
+  if (urlQ) { searchQ = urlQ; }
   renderCatBar();
   renderGrid();
-  document.getElementById('hero-search').addEventListener('input', e => { searchQ = e.target.value; renderGrid(); });
   document.getElementById('sort-select').addEventListener('change', e => { activeSort = e.target.value; renderGrid(); });
 });
 </script>

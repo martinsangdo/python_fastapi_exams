@@ -290,14 +290,7 @@ const Nav = {
             <div class="nav-logo-icon">E</div>
             ExamPrep
           </a>
-          <div class="nav-search hide-mobile">
-            <div class="search-wrap">
-              <span class="search-icon">${Icons.search(15)}</span>
-              <input class="input input-search" id="nav-search-input" placeholder="Search certifications..."/>
-            </div>
-          </div>
           <div class="nav-links">
-            <a href="/index.html" class="nav-link ${activePage==='home'?'active':''}">Browse</a>
             ${user ? `<a href="/pages/my-learning.html" class="nav-link ${activePage==='my-learning'?'active':''}">My Learning</a>` : ''}
             ${user?.role === 'admin' ? `<a href="/pages/admin.html" class="nav-link ${activePage==='admin'?'active':''}">Admin</a>` : ''}
             ${user ? `
