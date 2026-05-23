@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Sign Up — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-text">ExamPrep</div>
+      <h2 class="t-h2 mt-8 mb-4">Create your account</h2>
+      <p class="t-muted t-sm">Join 50,000+ learners passing their certifications</p>
+    </div>
+
+    <div id="error-box" style="display:none"></div>
+
+    <!-- Progress indicator -->
+    <div class="flex gap-8 mb-24" id="step-indicator">
+      <div style="flex:1;height:3px;border-radius:2px;background:var(--purple)" id="step-1-bar"></div>
+      <div style="flex:1;height:3px;border-radius:2px;background:var(--border)" id="step-2-bar"></div>
+    </div>
+
+    <form id="signup-form" style="display:flex;flex-direction:column;gap:16px">
+      <div class="input-group">
+        <label class="input-label">Full Name</label>
+        <input class="input" id="fullname" placeholder="John Doe" autocomplete="name"/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Email address</label>
+        <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input" id="password" type="password" placeholder="At least 8 characters" autocomplete="new-password" required/>
+        <div id="pw-hints" style="display:none;margin-top:4px">
+          <div class="t-xs t-muted" id="pw-len">○ At least 8 characters</div>
+          <div class="t-xs t-muted" id="pw-upper">○ At least one uppercase letter</div>
+          <div class="t-xs t-muted" id="pw-digit">○ At least one digit</div>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Confirm Password</label>
+        <input class="input" id="confirm" type="password" placeholder="Repeat your password" required/>
+      </div>
+      <label class="flex-center gap-10 t-sm" style="cursor:pointer">
+        <input type="checkbox" id="agree" style="accent-color:var(--purple)" required/>
+        I agree to the <a href="#" style="color:var(--purple)">Terms of Service</a> and <a href="#" style="color:var(--purple)">Privacy Policy</a>
+      </label>
+      <button class="btn btn-primary btn-lg w-full" type="submit" id="submit-btn">Create Account</button>
+    </form>
+
+    <div class="auth-divider">or sign up with</div>
+    <div class="flex gap-12">
+      <button class="btn btn-outline auth-social-btn" onclick="demoSignup('google')">🇬 Google</button>
+      <button class="btn btn-outline auth-social-btn" onclick="demoSignup('github')">⬛ GitHub</button>
+    </div>
+
+    <p class="t-sm t-muted t-center mt-24">
+      Already have an account? <a href="/pages/login.html" style="color:var(--purple);font-weight:600">Log in</a>
+    </p>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.innerHTML = `<div class="alert alert-error mb-16">${Icons.info(16)} ${msg}</div>`;
+  el.style.display = 'block';
+}
+
+// Password strength hints
+document.getElementById('password')?.addEventListener('focus', () => {
+  document.getElementById('pw-hints').style.display = 'block';
+});
+document.getElementById('password')?.addEventListener('input', e => {
+  const v = e.target.value;
+  const setHint = (id, ok) => {
+    const el = document.getElementById(id);
+    el.textContent = el.textContent.replace(/[○●]/, ok?'●':'○');
+    el.style.color = ok ? 'var(--green)' : 'var(--ink-soft)';
+  };
+  setHint('pw-len',   v.length >= 8);
+  setHint('pw-upper', /[A-Z]/.test(v));
+  setHint('pw-digit', /\d/.test(v));
+});
+
+async function doSignup(name, email, password) {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Creating account…';
+  try {
+    const username = (name || email.split('@')[0]).replace(/\s+/g,'_').toLowerCase();
+    const res = await API.auth.register({ email, username, password, full_name: name });
+    State.setToken(res.access_token, res.refresh_token);
+    const user = res._user || { id: res.user_id, username, email, role: res.role || 'user' };
+    State.setUser(user);
+    document.getElementById('step-2-bar').style.background = 'var(--purple)';
+    Toast.show('Welcome to ExamPrep, ' + user.username + '!');
+    window.location.href = '/index.html';
+  } catch(e) {
+    showError(e.message || 'Registration failed. Please try again.');
+    btn.disabled = false;
+    btn.textContent = 'Create Account';
+  }
+}
+
+document.getElementById('signup-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const name     = document.getElementById('fullname').value.trim();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const confirm  = document.getElementById('confirm').value;
+  const agreed   = document.getElementById('agree').checked;
+  if (!email || !password) { showError('Email and password are required.'); return; }
+  if (password.length < 8) { showError('Password must be at least 8 characters.'); return; }
+  if (!/[A-Z]/.test(password)) { showError('Password needs at least one uppercase letter.'); return; }
+  if (!/\d/.test(password)) { showError('Password needs at least one digit.'); return; }
+  if (password !== confirm) { showError('Passwords do not match.'); return; }
+  if (!agreed) { showError('Please accept the Terms of Service.'); return; }
+  await doSignup(name, email, password);
+});
+
+function demoSignup(provider) {
+  doSignup('Demo User', `demo_${provider}_${Date.now()}@examprep.dev`, 'Demo1234!');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  Nav.render();
+  if (State.user) window.location.href = '/index.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+<div id="admin-root"></div>
+
+<script src="/js/app.js"></script>
+<script>
+let activeSection = 'dashboard';
+
+const NAV_ITEMS = [
+  {id:'dashboard', icon:'chart',  label:'Dashboard'},
+  {id:'exams',     icon:'book',   label:'Exams'},
+  {id:'questions', icon:'tag',    label:'Questions'},
+  {id:'users',     icon:'users',  label:'Users'},
+  {id:'purchases', icon:'award',  label:'Purchases'},
+  {id:'rag',       icon:'robot',  label:'AI / RAG'},
+];
+
+function renderShell() {
+  document.getElementById('admin-root').innerHTML = `
+    <div class="admin-layout">
+      <aside class="admin-sidebar">
+        <div class="admin-sidebar-title">Admin Panel</div>
+        ${NAV_ITEMS.map(item => `
+          <div class="admin-nav-item ${activeSection===item.id?'active':''}" data-section="${item.id}">
+            ${Icons[item.icon]?.(16)||''} ${item.label}
+          </div>`).join('')}
+        <div style="margin-top:24px;border-top:1px solid rgba(255,255,255,.1);padding-top:24px">
+          <a href="/index.html" class="admin-nav-item">${Icons.home(16)} Back to Site</a>
+        </div>
+      </aside>
+      <main class="admin-content" id="admin-content"></main>
+    </div>`;
+
+  document.querySelectorAll('.admin-nav-item[data-section]').forEach(item => {
+    item.addEventListener('click', () => { activeSection = item.dataset.section; renderShell(); renderSection(); });
+  });
+  renderSection();
+}
+
+function renderSection() {
+  const sections = { dashboard: renderDashboard, exams: renderExams, questions: renderQuestions, users: renderUsers, purchases: renderPurchases, rag: renderRAG };
+  document.getElementById('admin-content').innerHTML = sections[activeSection]?.() || '';
+  attachSectionEvents();
+}
+
+// ── Dashboard ──────────────────────────────────────────────────────────────
+function renderDashboard() {
+  return `
+    <div class="admin-page-header"><h1 class="t-h1">Dashboard</h1><span class="t-sm t-muted">Last updated: just now</span></div>
+    <div class="admin-stat-grid">
+      ${[
+        {title:'Total Revenue',num:'$12,480',trend:'↑ +18% this month'},
+        {title:'Active Students',num:'1,240',trend:'↑ +8% this week'},
+        {title:'Exams Published',num:'8',trend:'2 pending review'},
+        {title:'Avg. Pass Rate',num:'73%',trend:'↑ +5% vs last month'},
+      ].map(s=>`<div class="admin-stat-card"><h3>${s.title}</h3><div class="num">${s.num}</div><div class="trend">${s.trend}</div></div>`).join('')}
+    </div>
+    <div class="grid-2 gap-24 mb-24">
+      <div class="admin-card">
+        <h3 class="t-h3 mb-16">Revenue by Exam</h3>
+        ${[['AWS SAA-C03','$4,890',78],['Security+','$3,210',61],['Python Pro','$2,100',42],['CKA','$1,800',36],['AWS CCP','$980',24]].map(([n,r,p])=>`
+          <div class="bar-row"><div class="bar-label">${n}</div><div class="bar-track"><div class="bar-fill" style="width:${p}%"></div></div><div class="bar-value">${r}</div></div>
+        `).join('')}
+      </div>
+      <div class="admin-card">
+        <h3 class="t-h3 mb-16">Recent Purchases</h3>
+        <table class="table">
+          <thead><tr><th>User</th><th>Exam</th><th>Amount</th></tr></thead>
+          <tbody>
+            ${[
+              {user:'alex@email.com',exam:'AWS SAA',amount:'$29.99'},
+              {user:'maria@email.com',exam:'Security+',amount:'$24.99'},
+              {user:'james@email.com',exam:'Python Pro',amount:'$19.99'},
+              {user:'sofia@email.com',exam:'CKA',amount:'$34.99'},
+            ].map(r=>`<tr><td class="t-sm">${r.user}</td><td class="t-sm t-muted">${r.exam}</td><td style="font-weight:700">${r.amount}</td></tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="admin-card">
+      <h3 class="t-h3 mb-16">Pass Rate by Exam</h3>
+      <div class="grid-4">
+        ${MOCK_EXAMS.slice(0,4).map(e => {
+          const rate = Math.floor(65+Math.random()*20);
+          return `<div style="text-align:center;padding:16px">
+            <div style="font-size:1.5rem;margin-bottom:8px">${e.emoji}</div>
+            <div style="font-weight:600;font-size:.875rem;margin-bottom:12px">${e.title.split(' ').slice(0,3).join(' ')}</div>
+            <div style="width:64px;height:64px;border-radius:50%;border:6px solid ${rate>=70?'var(--green)':'var(--red)'};margin:0 auto 8px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1rem">${rate}%</div>
+            <div class="t-xs t-muted">Pass rate</div>
+          </div>`;
+        }).join('')}
+      </div>
+    </div>`;
+}
+
+// ── Exams ──────────────────────────────────────────────────────────────────
+function renderExams() {
+  return `
+    <div class="admin-page-header">
+      <h1 class="t-h1">Manage Exams</h1>
+      <button class="btn btn-primary" id="add-exam-btn">${Icons.plus(16)} Add Exam</button>
+    </div>
+    <div class="flex gap-12 mb-20 flex-wrap">
+      <div class="search-wrap" style="flex:1;min-width:200px"><span class="search-icon">${Icons.search(14)}</span><input class="input input-search" placeholder="Search exams…" id="exam-search"/></div>
+      <select class="select" style="width:150px;padding:8px 32px 8px 14px"><option>All Categories</option>${[...new Set(MOCK_EXAMS.map(e=>e.category))].map(c=>`<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Students</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="exam-table-body">
+          ${MOCK_EXAMS.map(e=>`
+            <tr>
+              <td>
+                <div class="flex-center gap-10">
+                  <span style="font-size:1.25rem">${e.emoji}</span>
+                  <div>
+                    <div style="font-weight:600;font-size:.875rem;max-width:280px" class="truncate-1">${e.title}</div>
+                    <div class="t-xs t-muted">${e.questions} questions · ${e.packages} tests</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge badge-purple">${e.category}</span></td>
+              <td style="font-weight:700">${Utils.formatPrice(e.price)}</td>
+              <td>${Utils.formatNumber(e.students)}</td>
+              <td><span style="color:var(--star);font-weight:600">${e.rating} ★</span></td>
+              <td><span class="badge badge-green">Published</span></td>
+              <td>
+                <div class="flex gap-4">
+                  <button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:6px 10px">${Icons.edit(14)} Edit</button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--red);padding:6px 10px">${Icons.trash(14)}</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── Questions ──────────────────────────────────────────────────────────────
+function renderQuestions() {
+  return `
+    <div class="admin-page-header">
+      <h1 class="t-h1">Manage Questions</h1>
+      <button class="btn btn-primary" id="add-q-btn">${Icons.plus(16)} Add Question</button>
+    </div>
+    <div class="flex gap-12 mb-20 flex-wrap">
+      <div class="search-wrap" style="flex:1;min-width:200px"><span class="search-icon">${Icons.search(14)}</span><input class="input input-search" placeholder="Search questions…"/></div>
+      <select class="select" style="width:160px;padding:8px 32px 8px 14px"><option>All Exams</option>${MOCK_EXAMS.map(e=>`<option value="${e.id}">${e.title.split(' ').slice(0,3).join(' ')}</option>`).join('')}</select>
+      <select class="select" style="width:130px;padding:8px 32px 8px 14px"><option>All Types</option><option>Single</option><option>Multiple</option><option>True/False</option></select>
+      <select class="select" style="width:130px;padding:8px 32px 8px 14px"><option>All Levels</option><option>Easy</option><option>Medium</option><option>Hard</option></select>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th style="width:40px">#</th><th>Question</th><th>Type</th><th>Difficulty</th><th>Tags</th><th>Accuracy</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${MOCK_QUESTIONS.map((q,i)=>`
+            <tr>
+              <td class="t-muted t-sm">${i+1}</td>
+              <td style="max-width:320px"><div class="truncate-2" style="font-size:.875rem;font-weight:500">${q.text}</div></td>
+              <td><span class="badge badge-gray">${q.type}</span></td>
+              <td><span class="badge ${q.difficulty==='easy'?'badge-green':q.difficulty==='hard'?'badge-red':'badge-gold'}">${q.difficulty}</span></td>
+              <td>${q.tags.map(t=>`<span class="chip" style="font-size:.7rem;padding:2px 8px;margin:0 2px">${t}</span>`).join('')}</td>
+              <td>
+                <div class="flex-center gap-8">
+                  <div class="progress-bar" style="width:60px;height:6px"><div class="progress-fill" style="width:${65+i*7}%"></div></div>
+                  <span class="t-sm">${65+i*7}%</span>
+                </div>
+              </td>
+              <td>
+                <div class="flex gap-4">
+                  <button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:6px 8px">${Icons.edit(14)}</button>
+                  <button class="btn btn-ghost btn-sm" style="color:var(--red);padding:6px 8px">${Icons.trash(14)}</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── Users ──────────────────────────────────────────────────────────────────
+function renderUsers() {
+  const USERS = [
+    {name:'Alex Chen',email:'alex@email.com',role:'user',courses:3,spent:'$74.97',joined:'Jan 2026',active:true},
+    {name:'Maria Garcia',email:'maria@email.com',role:'user',courses:1,spent:'$24.99',joined:'Feb 2026',active:true},
+    {name:'James Liu',email:'james@email.com',role:'user',courses:2,spent:'$54.98',joined:'Mar 2026',active:false},
+    {name:'Sofia Martins',email:'sofia@email.com',role:'user',courses:4,spent:'$109.96',joined:'Mar 2026',active:true},
+    {name:'Admin User',email:'admin@examprep.dev',role:'admin',courses:0,spent:'$0',joined:'Jan 2026',active:true},
+  ];
+  return `
+    <div class="admin-page-header">
+      <h1 class="t-h1">Users <span class="badge badge-gray" style="font-size:1rem;font-weight:400">${USERS.length}</span></h1>
+      <div class="search-wrap" style="width:280px"><span class="search-icon">${Icons.search(14)}</span><input class="input input-search" placeholder="Search users…"/></div>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th>User</th><th>Role</th><th>Courses</th><th>Total Spent</th><th>Joined</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${USERS.map(u=>`
+            <tr>
+              <td>
+                <div class="flex-center gap-10">
+                  <div style="width:36px;height:36px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem;flex-shrink:0">${u.name[0]}</div>
+                  <div>
+                    <div style="font-weight:600;font-size:.875rem">${u.name}</div>
+                    <div class="t-xs t-muted">${u.email}</div>
+                  </div>
+                </div>
+              </td>
+              <td><span class="badge ${u.role==='admin'?'badge-purple':'badge-gray'}">${u.role}</span></td>
+              <td>${u.courses}</td>
+              <td style="font-weight:600">${u.spent}</td>
+              <td class="t-sm t-muted">${u.joined}</td>
+              <td><span class="badge ${u.active?'badge-green':'badge-red'}">${u.active?'Active':'Inactive'}</span></td>
+              <td>
+                <div class="flex gap-4">
+                  <button class="btn btn-ghost btn-sm" style="color:var(--purple);padding:6px 10px">${Icons.edit(14)}</button>
+                  <button class="btn btn-ghost btn-sm" style="color:${u.active?'var(--red)':'var(--green)'};padding:6px 10px">${u.active?'Deactivate':'Activate'}</button>
+                </div>
+              </td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── Purchases ──────────────────────────────────────────────────────────────
+function renderPurchases() {
+  const PURCHASES = [
+    {id:'pi_1Abc123',user:'alex@email.com',exam:'AWS SAA-C03',amount:'$29.99',status:'completed',date:'May 22, 2026'},
+    {id:'pi_2Def456',user:'maria@email.com',exam:'Security+',amount:'$24.99',status:'completed',date:'May 21, 2026'},
+    {id:'pi_3Ghi789',user:'james@email.com',exam:'Python Pro',amount:'$19.99',status:'refunded',date:'May 20, 2026'},
+    {id:'pi_4Jkl012',user:'sofia@email.com',exam:'CKA',amount:'$34.99',status:'completed',date:'May 20, 2026'},
+    {id:'pi_5Mno345',user:'alex@email.com',exam:'AWS CCP',amount:'$14.99',status:'completed',date:'May 18, 2026'},
+  ];
+  const total = PURCHASES.filter(p=>p.status==='completed').reduce((s,p)=>s+parseFloat(p.amount.slice(1)),0);
+  return `
+    <div class="admin-page-header">
+      <h1 class="t-h1">Purchases</h1>
+      <div class="flex gap-12 flex-wrap">
+        <select class="select" style="width:140px;padding:8px 32px 8px 14px"><option>All Time</option><option>This Month</option><option>This Week</option></select>
+        <button class="btn btn-outline" onclick="Toast.show('CSV exported!')">Export CSV</button>
+      </div>
+    </div>
+    <div class="admin-stat-grid" style="grid-template-columns:repeat(3,1fr);margin-bottom:24px">
+      <div class="admin-stat-card"><h3>Total Revenue</h3><div class="num">$${total.toFixed(2)}</div><div class="trend">All time</div></div>
+      <div class="admin-stat-card"><h3>Transactions</h3><div class="num">${PURCHASES.filter(p=>p.status==='completed').length}</div><div class="trend">Completed</div></div>
+      <div class="admin-stat-card"><h3>Refunds</h3><div class="num" style="color:var(--red)">${PURCHASES.filter(p=>p.status==='refunded').length}</div><div class="trend" style="color:var(--ink-soft)">This month</div></div>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th>Payment ID</th><th>User</th><th>Exam</th><th>Amount</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+        <tbody>
+          ${PURCHASES.map(r=>`
+            <tr>
+              <td><span class="t-mono t-xs">${r.id}</span></td>
+              <td class="t-sm">${r.user}</td>
+              <td class="t-sm t-muted">${r.exam}</td>
+              <td style="font-weight:700">${r.amount}</td>
+              <td><span class="badge ${r.status==='completed'?'badge-green':r.status==='refunded'?'badge-red':'badge-gold'}">${r.status}</span></td>
+              <td class="t-sm t-muted">${r.date}</td>
+              <td>${r.status==='completed'?`<button class="btn btn-ghost btn-sm" style="color:var(--red);font-size:.8125rem">Refund</button>`:''}</td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ── RAG / AI ───────────────────────────────────────────────────────────────
+function renderRAG() {
+  return `
+    <div class="admin-page-header"><h1 class="t-h1">AI / RAG Documents</h1></div>
+    <div class="alert alert-info mb-24"><span>${Icons.info(16)}</span><span>Upload study materials here to power the AI study assistant. Documents are chunked, embedded, and stored in a vector database (ChromaDB).</span></div>
+    <div class="grid-2 gap-24">
+      <div class="admin-card">
+        <h3 class="t-h3 mb-16">Upload Document</h3>
+        <div style="display:flex;flex-direction:column;gap:16px">
+          <div class="input-group">
+            <label class="input-label">Exam</label>
+            <select class="select"><option>Select exam…</option>${MOCK_EXAMS.map(e=>`<option value="${e.id}">${e.title.split(' ').slice(0,4).join(' ')}</option>`).join('')}</select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Document Name</label>
+            <input class="input" placeholder="e.g. AWS SAA Official Study Guide Chapter 3"/>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Content (paste text)</label>
+            <textarea class="input" rows="6" placeholder="Paste document content here…" id="rag-content"></textarea>
+          </div>
+          <div class="grid-2 gap-12">
+            <div class="input-group"><label class="input-label">Chunk Size</label><input class="input" type="number" value="500"/></div>
+            <div class="input-group"><label class="input-label">Overlap</label><input class="input" type="number" value="50"/></div>
+          </div>
+          <button class="btn btn-primary" id="ingest-btn">${Icons.plus(16)} Ingest Document</button>
+        </div>
+      </div>
+      <div class="admin-card">
+        <h3 class="t-h3 mb-16">Ingested Documents</h3>
+        ${[
+          {exam:'AWS SAA-C03',source:'Official Study Guide Ch.1',chunks:24,date:'May 20, 2026'},
+          {exam:'AWS SAA-C03',source:'VPC Deep Dive Notes',chunks:12,date:'May 19, 2026'},
+          {exam:'Security+',source:'OWASP Top 10 Summary',chunks:18,date:'May 15, 2026'},
+        ].map(d=>`
+          <div class="flex-between mb-12 flex-wrap gap-8">
+            <div>
+              <div style="font-weight:600;font-size:.875rem">${d.source}</div>
+              <div class="t-xs t-muted">${d.exam} · ${d.chunks} chunks · ${d.date}</div>
+            </div>
+            <button class="btn btn-ghost btn-sm" style="color:var(--red)">${Icons.trash(14)}</button>
+          </div>`).join('')}
+        <div class="divider mt-16 mb-16"></div>
+        <div class="t-sm t-muted">3 documents · 54 total chunks stored</div>
+      </div>
+    </div>`;
+}
+
+// ── Modal helpers ──────────────────────────────────────────────────────────
+function showAddExamModal() {
+  Modal.show({
+    title: 'Add New Exam',
+    body: `
+      <div class="input-group"><label class="input-label">Title</label><input class="input" placeholder="AWS Certified Solutions Architect…"/></div>
+      <div class="input-group"><label class="input-label">Slug</label><input class="input" placeholder="aws-saa-c03"/></div>
+      <div class="input-group"><label class="input-label">Description</label><textarea class="input" rows="3" placeholder="Exam description…"></textarea></div>
+      <div class="grid-2 gap-12">
+        <div class="input-group"><label class="input-label">Category</label><select class="select">${['Cloud','Security','Programming','DevOps','Agile','Database','Networking'].map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div class="input-group"><label class="input-label">Price (USD)</label><input class="input" type="number" placeholder="29.99"/></div>
+      </div>`,
+    footer: `<button class="btn btn-ghost" onclick="Modal.close()">Cancel</button>
+             <button class="btn btn-primary" onclick="Toast.show('Exam created!');Modal.close()">Create Exam</button>`,
+  });
+}
+
+function showAddQuestionModal() {
+  Modal.show({
+    title: 'Add New Question',
+    size: 'modal-lg',
+    body: `
+      <div class="input-group"><label class="input-label">Question Text</label><textarea class="input" rows="3" placeholder="Enter the question…"></textarea></div>
+      <div class="grid-2 gap-12">
+        <div class="input-group"><label class="input-label">Exam</label><select class="select"><option>Select exam…</option>${MOCK_EXAMS.map(e=>`<option>${e.title.split(' ').slice(0,3).join(' ')}</option>`).join('')}</select></div>
+        <div class="input-group"><label class="input-label">Package</label><select class="select">${MOCK_PACKAGES.map(p=>`<option>${p.title}</option>`).join('')}</select></div>
+      </div>
+      <div class="grid-2 gap-12">
+        <div class="input-group"><label class="input-label">Type</label><select class="select"><option value="single">Single Answer</option><option value="multiple">Multiple Answers</option><option value="true_false">True / False</option></select></div>
+        <div class="input-group"><label class="input-label">Difficulty</label><select class="select"><option>Easy</option><option selected>Medium</option><option>Hard</option></select></div>
+      </div>
+      <div>
+        <div class="input-label mb-10">Answer Options <span class="t-xs t-muted">(select correct answer)</span></div>
+        ${['A','B','C','D'].map(k=>`
+          <div class="flex-center gap-10 mb-10">
+            <input type="radio" name="correct-ans" value="${k}" style="accent-color:var(--purple);flex-shrink:0"/>
+            <div style="width:32px;height:32px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.875rem;flex-shrink:0">${k}</div>
+            <input class="input" placeholder="Option ${k}" style="flex:1"/>
+          </div>`).join('')}
+      </div>
+      <div class="input-group"><label class="input-label">Explanation</label><textarea class="input" rows="3" placeholder="Why is the correct answer correct?"></textarea></div>
+      <div class="input-group"><label class="input-label">Tags (comma-separated)</label><input class="input" placeholder="s3, storage, cost-optimization"/></div>`,
+    footer: `<button class="btn btn-ghost" onclick="Modal.close()">Cancel</button>
+             <button class="btn btn-primary" onclick="Toast.show('Question added!');Modal.close()">Add Question</button>`,
+  });
+}
+
+function attachSectionEvents() {
+  document.getElementById('add-exam-btn')?.addEventListener('click', showAddExamModal);
+  document.getElementById('add-q-btn')?.addEventListener('click', showAddQuestionModal);
+  document.getElementById('ingest-btn')?.addEventListener('click', () => Toast.show('Document ingested into vector store!'));
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!State.user) { window.location.href = '/pages/login.html'; return; }
+  if (State.user.role !== 'admin') {
+    document.getElementById('admin-root').innerHTML = `
+      <div class="empty-state" style="margin-top:80px">
+        <div class="icon">🔒</div>
+        <h3 class="t-h3">Admin Access Required</h3>
+        <p class="t-muted mt-8 mb-16">Log in with an admin account to access this page.</p>
+        <a href="/pages/login.html" class="btn btn-primary">Log In as Admin</a>
+      </div>`;
+    return;
+  }
+  Nav.render('admin');
+  renderShell();
+});
+</script>
+</body>
+</html>

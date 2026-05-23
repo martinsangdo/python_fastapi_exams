@@ -1,0 +1,280 @@
+"""
+app/services/exam_service.py
+
+Exam + Package + Question business logic.
+Demonstrates:
+  - Cache-aside pattern (Module 2)
+  - DSA: Trie autocomplete, heap leaderboard (Module 1)
+  - Denormalized counters (write-through) for fast reads
+"""
+import math
+from typing import Optional
+from bson import ObjectId
+import structlog
+
+from app.core.database import get_db
+from app.core.cache import cache_get, cache_set, cache_delete_pattern, CacheKeys
+from app.models.documents import new_exam, new_package, new_question, utcnow
+from app.schemas.schemas import ExamCreate, ExamUpdate, PackageCreate, QuestionCreate
+from app.utils.dsa import ExamTrie, Leaderboard, count_tag_frequencies
+
+log = structlog.get_logger()
+
+# Module-level Trie — rebuilt on startup, updated on exam create/publish
+_exam_trie = ExamTrie()
+
+
+# ─── Exam CRUD ────────────────────────────────────────────────────────────────
+
+async def create_exam(data: ExamCreate) -> dict:
+    db = get_db()
+    if await db.exams.find_one({"slug": data.slug}):
+        raise ValueError(f"Slug '{data.slug}' already exists")
+
+    doc = new_exam(**data.model_dump())
+    result = await db.exams.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    log.info("exam.created", exam_id=str(result.inserted_id), slug=data.slug)
+    return _serialize(doc)
+
+
+async def list_exams(
+    category: Optional[str] = None,
+    page: int = 1,
+    page_size: int = 12,
+    published_only: bool = True,
+) -> dict:
+    cache_key = CacheKeys.EXAM_LIST.format(
+        category=category or "all", page=page
+    )
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    query: dict = {}
+    if published_only:
+        query["is_published"] = True
+    if category:
+        query["category"] = category
+
+    total = await db.exams.count_documents(query)
+    skip = (page - 1) * page_size
+    cursor = db.exams.find(query).sort("created_at", -1).skip(skip).limit(page_size)
+    items = [_serialize(e) async for e in cursor]
+
+    result = {
+        "items": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total else 0,
+    }
+    await cache_set(cache_key, result, ttl=120)
+    return result
+
+
+async def get_exam_by_slug(slug: str) -> Optional[dict]:
+    cache_key = CacheKeys.EXAM_DETAIL.format(slug=slug)
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    exam = await db.exams.find_one({"slug": slug})
+    if not exam:
+        return None
+
+    result = _serialize(exam)
+    await cache_set(cache_key, result, ttl=300)
+    return result
+
+
+async def update_exam(exam_id: str, data: ExamUpdate) -> Optional[dict]:
+    db = get_db()
+    updates = {k: v for k, v in data.model_dump().items() if v is not None}
+    updates["updated_at"] = utcnow()
+
+    result = await db.exams.find_one_and_update(
+        {"_id": ObjectId(exam_id)},
+        {"$set": updates},
+        return_document=True,
+    )
+    if result:
+        # Invalidate all cache related to this exam (Module 2: cache invalidation)
+        await cache_delete_pattern(f"*{exam_id}*")
+        await cache_delete_pattern("exams:list:*")
+    return _serialize(result) if result else None
+
+
+async def autocomplete_exams(prefix: str) -> list[str]:
+    """O(m) Trie lookup for search autocomplete — Module 1: DSA."""
+    return _exam_trie.search(prefix)
+
+
+async def rebuild_trie():
+    """Called on startup to populate the in-memory Trie."""
+    db = get_db()
+    async for exam in db.exams.find({"is_published": True}, {"title": 1}):
+        _exam_trie.insert(exam["title"], str(exam["_id"]))
+
+
+# ─── Package CRUD ─────────────────────────────────────────────────────────────
+
+async def create_package(exam_id: str, data: PackageCreate) -> dict:
+    db = get_db()
+    exam = await db.exams.find_one({"_id": ObjectId(exam_id)})
+    if not exam:
+        raise ValueError("Exam not found")
+    if await db.packages.count_documents({"exam_id": exam_id}) >= 6:
+        raise ValueError("An exam can have at most 6 packages")
+
+    doc = new_package(exam_id=exam_id, **data.model_dump())
+    result = await db.packages.insert_one(doc)
+    doc["_id"] = result.inserted_id
+    await cache_delete_pattern(f"packages:exam:{exam_id}")
+    return _serialize(doc)
+
+
+async def list_packages(exam_id: str) -> list[dict]:
+    cache_key = CacheKeys.PACKAGE_LIST.format(exam_id=exam_id)
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
+    packages = [_serialize(p) async for p in cursor]
+    await cache_set(cache_key, packages, ttl=300)
+    return packages
+
+
+# ─── Question CRUD ────────────────────────────────────────────────────────────
+
+async def add_question(package_id: str, data: QuestionCreate) -> dict:
+    db = get_db()
+    package = await db.packages.find_one({"_id": ObjectId(package_id)})
+    if not package:
+        raise ValueError("Package not found")
+
+    doc = new_question(
+        package_id=package_id,
+        exam_id=package["exam_id"],
+        **data.model_dump(),
+    )
+    result = await db.questions.insert_one(doc)
+    doc["_id"] = result.inserted_id
+
+    # Denormalized counter update (write-through)
+    await db.packages.update_one(
+        {"_id": ObjectId(package_id)},
+        {"$inc": {"question_count": 1}},
+    )
+    await db.exams.update_one(
+        {"_id": ObjectId(package["exam_id"])},
+        {"$inc": {"total_questions": 1}},
+    )
+    await cache_delete_pattern(f"questions:package:{package_id}")
+    return _serialize(doc)
+
+
+async def list_questions_public(package_id: str) -> list[dict]:
+    """Return questions WITHOUT correct answers — for test-takers."""
+    cache_key = CacheKeys.QUESTION_LIST.format(package_id=package_id)
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    cursor = db.questions.find({"package_id": package_id})
+    questions = []
+    async for q in cursor:
+        # Strip is_correct from options — security: never expose answers to client
+        public_options = [{"key": o["key"], "text": o["text"]} for o in q["options"]]
+        questions.append({
+            "id": str(q["_id"]),
+            "text": q["text"],
+            "type": q["type"],
+            "options": public_options,
+            "tags": q.get("tags", []),
+            "difficulty": q.get("difficulty", "medium"),
+        })
+
+    await cache_set(cache_key, questions, ttl=600)
+    return questions
+
+
+async def get_question_with_answers(question_id: str) -> Optional[dict]:
+    """Full question with answers — admin + grading only."""
+    db = get_db()
+    q = await db.questions.find_one({"_id": ObjectId(question_id)})
+    return _serialize(q) if q else None
+
+
+# ─── Leaderboard ──────────────────────────────────────────────────────────────
+
+async def get_leaderboard(exam_id: str, top_n: int = 10) -> list[dict]:
+    """
+    Build top-N leaderboard using min-heap (DSA Module 1).
+    Cached for 60s — slight staleness is acceptable for leaderboard (AHA principle).
+    """
+    cache_key = CacheKeys.LEADERBOARD.format(exam_id=exam_id, n=top_n)
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    board = Leaderboard(k=top_n)
+
+    # Aggregate: best score per user per exam
+    pipeline = [
+        {"$match": {"exam_id": exam_id, "status": "completed"}},
+        {"$sort": {"score": -1}},
+        {"$group": {
+            "_id": "$user_id",
+            "best_score": {"$first": "$score"},
+            "passed": {"$first": "$passed"},
+            "completed_at": {"$first": "$completed_at"},
+        }},
+    ]
+    async for row in db.attempts.aggregate(pipeline):
+        user = await db.users.find_one(
+            {"_id": ObjectId(row["_id"])}, {"username": 1}
+        )
+        username = user["username"] if user else "unknown"
+        board.add(
+            score=row["best_score"],
+            username=username,
+            meta={"passed": row["passed"], "completed_at": row.get("completed_at")},
+        )
+
+    result = board.top_k()
+    await cache_set(cache_key, result, ttl=60)
+    return result
+
+
+# ─── Analytics ────────────────────────────────────────────────────────────────
+
+async def get_exam_analytics(exam_id: str) -> dict:
+    """Tag frequency + difficulty distribution for an exam."""
+    db = get_db()
+    questions = [q async for q in db.questions.find({"exam_id": exam_id})]
+    tag_freq = count_tag_frequencies(questions)
+    difficulty_dist = {"easy": 0, "medium": 0, "hard": 0}
+    for q in questions:
+        difficulty_dist[q.get("difficulty", "medium")] += 1
+    return {
+        "total_questions": len(questions),
+        "tag_frequencies": tag_freq,
+        "difficulty_distribution": difficulty_dist,
+    }
+
+
+# ─── Helpers ──────────────────────────────────────────────────────────────────
+
+def _serialize(doc: Optional[dict]) -> Optional[dict]:
+    if doc is None:
+        return None
+    result = dict(doc)
+    result["id"] = str(result.pop("_id"))
+    return result

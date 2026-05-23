@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ExamPrep — Master Any Certification</title>
+  <meta name="description" content="Practice with real exam-style questions. 6 full-length tests per certification. 95% pass rate."/>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <div class="hero-tag">
+        <span class="badge badge-purple" style="padding:6px 14px;font-size:.8125rem">🎯 Trusted by 50,000+ learners</span>
+      </div>
+      <h1 class="t-hero" style="color:#fff;margin-bottom:16px">Pass Your Certification<br><em>On the First Try</em></h1>
+      <p class="hero-sub">Practice with real exam-style questions across Cloud, Security, DevOps, and more. Each course includes 6 full-length timed tests.</p>
+      <div class="hero-search-bar">
+        <span class="hero-search-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+        </span>
+        <input class="input" id="hero-search" placeholder="Search for a certification..."/>
+      </div>
+      <div class="hero-stats">
+        <div><div class="hero-stat-num">50K+</div><div class="hero-stat-lbl">Active learners</div></div>
+        <div><div class="hero-stat-num">200+</div><div class="hero-stat-lbl">Practice tests</div></div>
+        <div><div class="hero-stat-num">95%</div><div class="hero-stat-lbl">Pass rate</div></div>
+        <div><div class="hero-stat-num">6</div><div class="hero-stat-lbl">Tests per exam</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Category bar -->
+<div class="cat-bar">
+  <div class="cat-inner" id="cat-bar"></div>
+</div>
+
+<!-- Exam grid -->
+<div class="container" style="padding:40px 24px 64px">
+  <div class="section-header">
+    <div>
+      <h2 class="t-h2" id="grid-title">All Certifications</h2>
+      <p class="t-muted t-sm mt-4" id="grid-count"></p>
+    </div>
+    <select class="select" id="sort-select" style="width:auto;padding:8px 32px 8px 14px">
+      <option value="popular">Most Popular</option>
+      <option value="rated">Highest Rated</option>
+      <option value="price-asc">Price: Low to High</option>
+      <option value="price-desc">Price: High to Low</option>
+    </select>
+  </div>
+  <div class="grid-4" id="exam-grid"></div>
+</div>
+
+<!-- Why ExamPrep -->
+<section class="page-section" style="background:var(--surface);border-top:1px solid var(--border)">
+  <div class="container">
+    <h2 class="t-h2 t-center mb-32">Why learners choose ExamPrep</h2>
+    <div class="feature-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
+        <h3 class="t-h3 mb-12">Realistic Questions</h3>
+        <p class="t-body t-muted">Every question mirrors the real exam format with detailed explanations for each answer choice.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg></div>
+        <h3 class="t-h3 mb-12">Track Your Progress</h3>
+        <p class="t-body t-muted">See your improvement across all 6 practice tests with detailed analytics and weak-area identification.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8" cy="16" r="1" fill="var(--purple)"/><circle cx="16" cy="16" r="1" fill="var(--purple)"/></svg></div>
+        <h3 class="t-h3 mb-12">AI Study Assistant</h3>
+        <p class="t-body t-muted">Get hints and explanations powered by AI — available 24/7 as you practice.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Testimonials -->
+<section class="page-section">
+  <div class="container">
+    <h2 class="t-h2 t-center mb-32">What our students say</h2>
+    <div class="grid-3">
+      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
+        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="t-body" style="margin-bottom:16px">"Passed my AWS SAA on the first attempt! The practice tests were very similar to the real exam. Highly recommended."</p>
+        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">A</div><div><div style="font-weight:600;font-size:.9375rem">Alex Chen</div><div class="t-sm t-muted">AWS Solutions Architect</div></div></div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
+        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="t-body" style="margin-bottom:16px">"Excellent quality questions with detailed explanations. The AI assistant helped me understand difficult concepts quickly."</p>
+        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">M</div><div><div style="font-weight:600;font-size:.9375rem">Maria Garcia</div><div class="t-sm t-muted">Security Engineer</div></div></div>
+      </div>
+      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
+        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
+        <p class="t-body" style="margin-bottom:16px">"Scored 890/1000 on the real exam. The questions were harder than the actual exam which helped me prepare perfectly."</p>
+        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">J</div><div><div style="font-weight:600;font-size:.9375rem">James Liu</div><div class="t-sm t-muted">DevOps Engineer</div></div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="footer-root"></div>
+
+<script src="/js/app.js"></script>
+<script>
+const CATEGORIES = ['All','Cloud','Security','Programming','DevOps','Agile','Database','Networking'];
+let activeCat = 'All', activeSort = 'popular', searchQ = '';
+
+function getFiltered() {
+  let exams = [...MOCK_EXAMS];
+  if (activeCat !== 'All') exams = exams.filter(e => e.category === activeCat);
+  if (searchQ) exams = exams.filter(e =>
+    e.title.toLowerCase().includes(searchQ.toLowerCase()) ||
+    e.category.toLowerCase().includes(searchQ.toLowerCase())
+  );
+  if (activeSort === 'rated')      exams.sort((a,b) => b.rating - a.rating);
+  else if (activeSort === 'price-asc')  exams.sort((a,b) => a.price - b.price);
+  else if (activeSort === 'price-desc') exams.sort((a,b) => b.price - a.price);
+  else exams.sort((a,b) => b.students - a.students);
+  return exams;
+}
+
+function examCardHTML(exam) {
+  const purchased = State.hasPurchased(exam.id);
+  return `
+    <div class="exam-card-wrap">
+      <div class="card exam-card" data-slug="${exam.slug}">
+        <div class="exam-card-thumb">
+          <div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${exam.emoji}</div>
+          ${exam.badge ? `<div class="exam-card-badge"><span class="badge badge-gold">${exam.badge}</span></div>` : ''}
+        </div>
+        <div class="exam-card-body">
+          <div class="exam-card-title truncate-2">${exam.title}</div>
+          <div class="exam-card-instructor">${exam.instructor}</div>
+          <div class="exam-card-meta">
+            <span class="exam-card-rating">${exam.rating}</span>
+            <span class="stars">${Utils.stars(exam.rating)}</span>
+            <span class="exam-card-count">(${Utils.formatNumber(exam.students)})</span>
+          </div>
+          <div class="exam-card-footer">
+            <span class="exam-card-price">${Utils.formatPrice(exam.price)}</span>
+            <span class="exam-card-meta-right">${Icons.book(13)} ${exam.packages} tests</span>
+          </div>
+        </div>
+      </div>
+      <div class="exam-card-popup">
+        <span class="badge badge-purple mb-8">${exam.category}</span>
+        <h3 class="t-h3" style="margin:6px 0 8px">${exam.title}</h3>
+        <p class="t-sm t-muted mb-12">${exam.description}</p>
+        ${(exam.learns||[]).slice(0,4).map(l=>`<div class="popup-feature">${Icons.check(13)} <span class="t-sm">${l}</span></div>`).join('')}
+        <div class="flex gap-8 mt-16">
+          <a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-primary" style="flex:1">See Details</a>
+          ${!purchased ? `<a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-gold">${Utils.formatPrice(exam.price)}</a>` : '<span class="badge badge-green" style="padding:8px 14px">Enrolled</span>'}
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderCatBar() {
+  document.getElementById('cat-bar').innerHTML = CATEGORIES.map(c =>
+    `<button class="cat-btn ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`
+  ).join('');
+  document.querySelectorAll('.cat-btn').forEach(btn =>
+    btn.addEventListener('click', () => { activeCat = btn.dataset.cat; renderGrid(); renderCatBar(); })
+  );
+}
+
+function renderGrid() {
+  const exams = getFiltered();
+  document.getElementById('grid-title').textContent = activeCat==='All' ? 'All Certifications' : activeCat+' Certifications';
+  document.getElementById('grid-count').textContent = exams.length + ' courses available';
+  const grid = document.getElementById('exam-grid');
+  if (!exams.length) {
+    grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="icon">🔍</div><h3 class="t-h3">No exams found</h3><p class="t-muted mt-8">Try a different category or search term</p></div>`;
+    return;
+  }
+  grid.innerHTML = exams.map(examCardHTML).join('');
+  grid.querySelectorAll('.exam-card').forEach(card =>
+    card.addEventListener('click', () => window.location.href = `/pages/exam-detail.html?slug=${card.dataset.slug}`)
+  );
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  Nav.render('home');
+  Footer.render();
+  const urlQ = Utils.getParam('q');
+  if (urlQ) { searchQ = urlQ; document.getElementById('hero-search').value = urlQ; }
+  renderCatBar();
+  renderGrid();
+  document.getElementById('hero-search').addEventListener('input', e => { searchQ = e.target.value; renderGrid(); });
+  document.getElementById('sort-select').addEventListener('change', e => { activeSort = e.target.value; renderGrid(); });
+});
+</script>
+</body>
+</html>

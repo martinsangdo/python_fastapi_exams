@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Exam Detail — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+  <style>
+    :root {
+      --acc:   #0f6e56;
+      --acc-l: #e1f5ee;
+      --acc-m: #1d9e75;
+      --ink1:  #1a1a2e;
+      --ink2:  #3d3d5c;
+      --ink3:  #6b6b8a;
+      --s1:    #ffffff;
+      --s2:    #f8f9fc;
+      --s3:    #f0f2f8;
+    }
+
+    /* SPLIT HERO */
+    .ep-hero{display:grid;grid-template-columns:1fr 400px;min-height:420px}
+    .ep-left{background:var(--ink1);padding:56px 60px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+    .ep-left::after{content:'';position:absolute;bottom:-60px;right:-60px;width:260px;height:260px;border-radius:50%;border:40px solid rgba(255,255,255,.04)}
+    .ep-right{background:var(--acc);display:flex;flex-direction:column;overflow:hidden}
+    .ep-emoji-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative}
+    .ep-emoji-zone::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.15)}
+    .ep-emoji-inner{position:relative;z-index:1;filter:drop-shadow(0 8px 32px rgba(0,0,0,.3))}
+    .ep-price-strip{background:rgba(0,0,0,.25);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .ep-price-num{font-size:2.25rem;font-weight:800;color:#fff;line-height:1}
+    .ep-price-orig{font-size:.875rem;color:rgba(255,255,255,.45);text-decoration:line-through}
+    .ep-enroll-btn{background:#fff;color:var(--acc);border:none;padding:14px 28px;font-weight:700;font-size:.9375rem;border-radius:4px;cursor:pointer;white-space:nowrap;font-family:var(--font);transition:opacity .15s}
+    .ep-enroll-btn:hover{opacity:.9}
+    .ep-enroll-btn.owned{background:var(--acc-l);color:var(--acc)}
+    .ep-cat{display:inline-flex;align-items:center;gap:6px;font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--acc-m);background:rgba(29,158,117,.15);padding:5px 12px;border-radius:100px;margin-bottom:20px;width:fit-content}
+    .ep-title{font-family:var(--font-serif);font-size:clamp(1.5rem,3vw,2.125rem);line-height:1.2;color:#fff;margin-bottom:18px}
+    .ep-desc{font-size:.9375rem;line-height:1.7;color:rgba(255,255,255,.65);margin-bottom:24px;max-width:520px}
+    .ep-meta{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
+    .ep-meta-item{display:flex;align-items:center;gap:8px;font-size:.875rem;color:rgba(255,255,255,.6)}
+    .ep-rating-val{color:#fac775;font-weight:700}
+    .ep-rating-stars{color:#fac775}
+    .ep-by{margin-top:24px;font-size:.875rem;color:rgba(255,255,255,.4)}
+    .ep-by strong{color:rgba(255,255,255,.7)}
+
+    /* STATS BAR */
+    .ep-stats-bar{background:var(--s2);border-bottom:1px solid var(--border);padding:0 60px;display:flex;overflow-x:auto}
+    .ep-stats-bar::-webkit-scrollbar{display:none}
+    .ep-stat{padding:18px 28px 18px 0;margin-right:28px;border-right:1px solid var(--border);white-space:nowrap;flex-shrink:0}
+    .ep-stat:last-child{border-right:none}
+    .ep-stat-val{font-size:1.5rem;font-weight:800;color:var(--ink1);line-height:1}
+    .ep-stat-lbl{font-size:.7rem;color:var(--ink3);margin-top:4px;text-transform:uppercase;letter-spacing:.06em;font-weight:600}
+
+    /* BODY LAYOUT */
+    .ep-body{display:grid;grid-template-columns:256px 1fr}
+
+    /* LEFT RAIL */
+    .ep-rail{background:var(--ink1);padding:28px 0;position:sticky;top:var(--nav-h);height:calc(100vh - var(--nav-h));overflow-y:auto}
+    .ep-rail::-webkit-scrollbar{width:4px}
+    .ep-rail::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px}
+    .ep-rail-label{font-size:.7rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:rgba(255,255,255,.28);padding:0 20px 10px}
+    .ep-rail-item{padding:12px 20px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:background .15s;border-left:3px solid transparent}
+    .ep-rail-item:hover{background:rgba(255,255,255,.05)}
+    .ep-rail-item.active{background:rgba(29,158,117,.15);border-left-color:var(--acc-m)}
+    .ep-rail-badge{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.8125rem;font-weight:700;flex-shrink:0;background:rgba(255,255,255,.07);color:rgba(255,255,255,.45)}
+    .ep-rail-item.active .ep-rail-badge{background:var(--acc-m);color:#fff}
+    .ep-rail-item.done .ep-rail-badge{background:rgba(29,158,117,.25);color:var(--acc-m)}
+    .ep-rail-item.locked .ep-rail-badge{opacity:.4}
+    .ep-rail-pname{font-size:.875rem;font-weight:600;color:rgba(255,255,255,.75);line-height:1.2}
+    .ep-rail-item.locked .ep-rail-pname{color:rgba(255,255,255,.3)}
+    .ep-rail-pmeta{font-size:.75rem;color:rgba(255,255,255,.3);margin-top:2px}
+    .ep-rail-item.done .ep-rail-pmeta{color:var(--acc-m)}
+    .ep-rail-score{margin-left:auto;font-size:.875rem;font-weight:700;color:var(--acc-m);flex-shrink:0}
+    .ep-rail-sep{height:1px;background:rgba(255,255,255,.07);margin:14px 20px}
+    .ep-rail-prog{padding:14px 20px}
+    .ep-rail-prog-lbl{font-size:.7rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;font-weight:600}
+    .ep-rail-track{height:5px;background:rgba(255,255,255,.1);border-radius:3px;margin-bottom:5px;overflow:hidden}
+    .ep-rail-fill{height:100%;background:var(--acc-m);border-radius:3px}
+    .ep-rail-pct{font-size:.8125rem;color:rgba(255,255,255,.4)}
+
+    /* CONTENT */
+    .ep-content{background:var(--s2);padding:40px 52px}
+    .ep-sh{font-size:1rem;font-weight:700;color:var(--ink1);margin-bottom:18px;display:flex;align-items:center;gap:10px}
+    .ep-sh::after{content:'';flex:1;height:1px;background:var(--border)}
+
+    /* SKILL GRID */
+    .ep-skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:40px}
+    .ep-skill-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:13px 15px;display:flex;align-items:flex-start;gap:9px}
+    .ep-skill-dot{width:7px;height:7px;border-radius:50%;background:var(--acc-m);flex-shrink:0;margin-top:5px}
+    .ep-skill-txt{font-size:.875rem;line-height:1.4;color:var(--ink2)}
+
+    /* PACKAGE CARDS */
+    .ep-pkg-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:10px;transition:box-shadow .15s}
+    .ep-pkg-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.07)}
+    .ep-pkg-row{padding:16px 20px;display:flex;align-items:center;gap:14px;cursor:pointer}
+    .ep-pkg-num{width:34px;height:34px;border-radius:50%;font-weight:800;font-size:.875rem;display:flex;align-items:center;justify-content:center;flex-shrink:0;background:var(--s3);color:var(--ink2);border:2px solid var(--border)}
+    .ep-pkg-card.free .ep-pkg-num{background:var(--acc-l);color:var(--acc);border-color:var(--acc-m)}
+    .ep-pkg-card.done .ep-pkg-num{background:var(--acc-l);color:var(--acc);border-color:var(--acc-m)}
+    .ep-pkg-pname{font-weight:700;font-size:.9375rem;color:var(--ink1)}
+    .ep-pkg-card.locked .ep-pkg-pname{color:var(--ink3)}
+    .ep-pkg-pmeta{font-size:.8125rem;color:var(--ink3);margin-top:2px}
+    .ep-pkg-right{margin-left:auto;display:flex;align-items:center;gap:10px;flex-shrink:0}
+    .ep-pkg-chev{color:var(--ink3);transition:transform .2s}
+    .ep-pkg-card.open .ep-pkg-chev{transform:rotate(180deg)}
+    .ep-pkg-detail{border-top:1px solid var(--border);padding:20px;background:var(--s2);display:none}
+    .ep-pkg-card.open .ep-pkg-detail{display:block}
+    .ep-pkg-drow{display:flex;gap:20px;margin-bottom:14px;flex-wrap:wrap}
+    .ep-pkg-dstat{font-size:.875rem;color:var(--ink2);display:flex;align-items:center;gap:6px}
+    .ep-sbar-row{display:flex;justify-content:space-between;font-size:.8125rem;margin-bottom:5px;color:var(--ink2)}
+    .ep-sbar-track{height:7px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px}
+    .ep-sbar-fill{height:100%;border-radius:3px}
+
+    /* REVIEWS */
+    .ep-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:40px}
+    .ep-review-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
+    .ep-review-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+    .ep-review-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;color:#fff}
+    .ep-review-name{font-weight:600;font-size:.9375rem}
+    .ep-review-date{font-size:.8125rem;color:var(--ink3);margin-top:1px}
+    .ep-review-stars{color:#ef9f27;font-size:.875rem;margin-bottom:7px}
+    .ep-review-txt{font-size:.875rem;line-height:1.6;color:var(--ink2)}
+
+    /* INSTRUCTOR */
+    .ep-inst-band{background:var(--ink1);border-radius:10px;padding:26px 30px;display:flex;align-items:center;gap:22px;margin-bottom:40px}
+    .ep-inst-av{width:64px;height:64px;border-radius:50%;background:var(--acc);color:#fff;font-size:1.625rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.12)}
+    .ep-inst-name{font-weight:700;color:#fff;font-size:1.0625rem}
+    .ep-inst-role{font-size:.875rem;color:rgba(255,255,255,.45);margin-bottom:6px}
+    .ep-inst-bio{font-size:.875rem;color:rgba(255,255,255,.55);line-height:1.6;max-width:440px}
+    .ep-inst-stats{margin-left:auto;display:flex;gap:24px;flex-shrink:0}
+    .ep-inst-sv{font-size:1.25rem;font-weight:800;color:var(--acc-m)}
+    .ep-inst-sl{font-size:.7rem;color:rgba(255,255,255,.35);text-transform:uppercase;letter-spacing:.06em}
+
+    /* REQUIREMENTS */
+    .ep-req-list{list-style:none;margin-bottom:40px}
+    .ep-req-item{display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border-soft);font-size:.9375rem;color:var(--ink2)}
+    .ep-req-item:last-child{border-bottom:none}
+    .ep-req-icon{width:20px;height:20px;border-radius:50%;background:var(--acc-l);color:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
+
+    /* RATING SUMMARY */
+    .ep-rat-box{display:flex;gap:28px;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:20px}
+    .ep-rat-big{text-align:center;flex-shrink:0}
+    .ep-rat-num{font-size:3rem;font-weight:800;color:#ba7517;line-height:1}
+    .ep-rat-stars{color:#ef9f27;font-size:1.2rem;margin-top:3px}
+    .ep-rat-lbl{font-size:.7rem;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
+    .ep-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.8125rem}
+    .ep-bar-track{flex:1;height:7px;background:var(--border);border-radius:3px;overflow:hidden}
+    .ep-bar-fill{height:100%;border-radius:3px;background:#ef9f27}
+    .ep-bar-pct{width:30px;text-align:right;color:var(--ink3)}
+    .ep-bar-lbl{width:14px;color:var(--ink3)}
+
+    /* CTA STRIP */
+    .ep-cta{background:var(--acc);padding:30px 60px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .ep-cta-h{color:#fff;font-size:1.25rem;font-weight:700;margin-bottom:5px}
+    .ep-cta-sub{color:rgba(255,255,255,.7);font-size:.9375rem}
+    .ep-cta-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+    .ep-cta-price{font-size:2rem;font-weight:800;color:#fff}
+    .ep-cta-btn{background:#fff;color:var(--acc);padding:13px 30px;font-weight:700;font-size:.9375rem;border-radius:4px;cursor:pointer;border:none;font-family:var(--font);transition:opacity .15s}
+    .ep-cta-btn:hover{opacity:.9}
+
+    /* RESPONSIVE */
+    @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 320px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
+    @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-review-grid{grid-template-columns:1fr}.ep-inst-stats{display:none}}
+    @media(max-width:640px){.ep-left{padding:28px 20px}.ep-content{padding:24px 20px}.ep-stats-bar{padding:0 20px}.ep-skill-grid{grid-template-columns:1fr}.ep-cta{flex-direction:column;align-items:flex-start;padding:24px 20px}}
+  </style>
+</head>
+<body>
+  <div id="nav-root"></div>
+  <main id="page-main"></main>
+  <div id="footer-root"></div>
+
+  <script src="/js/app.js"></script>
+  <script>
+    let exam = null;
+    let openPkg = null;
+    const SCORES = {'pkg-1':84,'pkg-2':null,'pkg-3':null,'pkg-4':null,'pkg-5':null,'pkg-6':null};
+
+    function pkgState(pkg, i, purchased) {
+      if (SCORES[pkg.id] !== null) return 'done';
+      if (purchased || i === 0)   return 'free';
+      return 'locked';
+    }
+
+    function svgChev() {
+      return `<svg class="ep-pkg-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>`;
+    }
+    function svgCheck(sz=12) {
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20,6 9,17 4,12"/></svg>`;
+    }
+    function svgClock(sz=14) {
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`;
+    }
+    function svgBook(sz=14) {
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`;
+    }
+    function svgAward(sz=14) {
+      return `<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>`;
+    }
+
+    /* HERO */
+    function renderHero(purchased) {
+      return `
+      <section class="ep-hero">
+        <div class="ep-left">
+          <div>
+            <div class="ep-cat">${exam.category}</div>
+            <h1 class="ep-title">${exam.title}</h1>
+            <p class="ep-desc">${exam.description}</p>
+            <div class="ep-meta">
+              <span class="ep-meta-item">
+                <span class="ep-rating-val">${exam.rating}</span>
+                <span class="ep-rating-stars">${'★'.repeat(Math.round(exam.rating))}</span>
+                <span>(${Utils.formatNumber(exam.students)} students)</span>
+              </span>
+              <span class="ep-meta-item">${svgBook(14)} ${exam.packages} tests</span>
+              <span class="ep-meta-item">${svgAward(14)} ${exam.questions}+ questions</span>
+            </div>
+          </div>
+          <div class="ep-by">By <strong>${exam.instructor}</strong></div>
+        </div>
+        <div class="ep-right">
+          <div class="ep-emoji-zone"><span class="ep-emoji-inner">${exam.emoji}</span></div>
+          <div class="ep-price-strip">
+            <div>
+              <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>
+              <div class="ep-price-orig">${Utils.formatPrice(exam.price*2)} original</div>
+            </div>
+            ${purchased
+              ? `<button class="ep-enroll-btn owned" onclick="location='/pages/my-learning.html'">Go to My Learning →</button>`
+              : `<button class="ep-enroll-btn" id="hero-enroll">Enroll Now</button>`}
+          </div>
+        </div>
+      </section>`;
+    }
+
+    /* STATS BAR */
+    function renderStatsBar() {
+      const done = Object.values(SCORES).filter(s=>s!==null).length;
+      const scores = Object.values(SCORES).filter(s=>s!==null);
+      const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+      return `
+      <div class="ep-stats-bar">
+        <div class="ep-stat"><div class="ep-stat-val">${exam.packages}</div><div class="ep-stat-lbl">Practice Tests</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${exam.questions}+</div><div class="ep-stat-lbl">Questions</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">90</div><div class="ep-stat-lbl">Min / Test</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">72%</div><div class="ep-stat-lbl">Pass Score</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${done}/${exam.packages}</div><div class="ep-stat-lbl">Completed</div></div>
+        ${avg!==null?`<div class="ep-stat"><div class="ep-stat-val" style="color:var(--acc-m)">${avg}%</div><div class="ep-stat-lbl">Avg Score</div></div>`:''}
+        <div class="ep-stat"><div class="ep-stat-val" style="color:#ba7517">${exam.rating}</div><div class="ep-stat-lbl">Rating</div></div>
+      </div>`;
+    }
+
+    /* RAIL */
+    function renderRail(purchased) {
+      const done = Object.values(SCORES).filter(s=>s!==null).length;
+      const pct = Math.round(done/exam.packages*100);
+      return `
+      <aside class="ep-rail">
+        <div class="ep-rail-label">Test Packages</div>
+        ${MOCK_PACKAGES.map((pkg,i)=>{
+          const state = pkgState(pkg,i,purchased);
+          const score = SCORES[pkg.id];
+          return `
+          <div class="ep-rail-item ${state}" data-pkg="${pkg.id}" data-state="${state}">
+            <div class="ep-rail-badge">${state==='done'?'✓':state==='locked'?'🔒':i+1}</div>
+            <div>
+              <div class="ep-rail-pname">${pkg.title}</div>
+              <div class="ep-rail-pmeta">${state==='done'?`Done · ${score}%`:state==='free'?'Ready':'Locked'}</div>
+            </div>
+            ${score!==null?`<div class="ep-rail-score">${score}%</div>`:''}
+          </div>`;
+        }).join('')}
+        <div class="ep-rail-sep"></div>
+        <div class="ep-rail-prog">
+          <div class="ep-rail-prog-lbl">Overall Progress</div>
+          <div class="ep-rail-track"><div class="ep-rail-fill" style="width:${pct}%"></div></div>
+          <div class="ep-rail-pct">${done} of ${exam.packages} completed</div>
+        </div>
+      </aside>`;
+    }
+
+    /* SKILLS */
+    function renderSkills() {
+      return `
+      <div style="margin-bottom:40px">
+        <div class="ep-sh">What you'll learn</div>
+        <div class="ep-skill-grid">
+          ${(exam.learns||[]).map(l=>`
+          <div class="ep-skill-card">
+            <div class="ep-skill-dot"></div>
+            <div class="ep-skill-txt">${l}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    /* PACKAGES */
+    function renderPackages(purchased) {
+      return `
+      <div style="margin-bottom:40px">
+        <div class="ep-sh">Practice Tests</div>
+        <div id="pkg-grid">
+          ${MOCK_PACKAGES.map((pkg,i)=>{
+            const state = pkgState(pkg,i,purchased);
+            const score = SCORES[pkg.id];
+            const isOpen = openPkg===pkg.id;
+            return `
+            <div class="ep-pkg-card ${state} ${isOpen?'open':''}" data-pkgid="${pkg.id}">
+              <div class="ep-pkg-row" data-toggle="${pkg.id}">
+                <div class="ep-pkg-num">${state==='done'?'✓':i+1}</div>
+                <div>
+                  <div class="ep-pkg-pname">${pkg.title}</div>
+                  <div class="ep-pkg-pmeta">${pkg.question_count} questions · ${pkg.time_limit_minutes} min</div>
+                </div>
+                <div class="ep-pkg-right">
+                  ${i===0&&!purchased?`<span class="badge badge-green" style="font-size:.75rem">Preview</span>`:''}
+                  ${score!==null?`<span class="badge ${score>=72?'badge-green':'badge-red'}" style="font-size:.8125rem">${score}%</span>`:''}
+                  ${state==='locked'?`<span style="color:var(--ink-faint);font-size:.8125rem">🔒</span>`:''}
+                  ${svgChev()}
+                </div>
+              </div>
+              ${isOpen?`
+              <div class="ep-pkg-detail">
+                <div class="ep-pkg-drow">
+                  <span class="ep-pkg-dstat">${svgClock(14)} ${pkg.time_limit_minutes} minutes</span>
+                  <span class="ep-pkg-dstat">${svgBook(14)} ${pkg.question_count} questions</span>
+                  <span class="ep-pkg-dstat">${svgAward(14)} Pass: ${pkg.pass_score_pct}%</span>
+                </div>
+                ${score!==null?`
+                <div>
+                  <div class="ep-sbar-row"><span>Your score</span><span style="font-weight:700;color:${score>=72?'var(--acc-m)':'#a32d2d'}">${score}%</span></div>
+                  <div class="ep-sbar-track"><div class="ep-sbar-fill" style="width:${score}%;background:${score>=72?'var(--acc-m)':'#a32d2d'}"></div></div>
+                </div>`:''}
+                <p class="t-body t-muted" style="margin-bottom:16px">${pkg.description}</p>
+                ${state==='locked'
+                  ?`<button class="btn btn-primary" id="unlock-btn">Unlock with Full Access</button>`
+                  :`<a href="/pages/exam-quiz.html?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                }
+              </div>`:''}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    }
+
+    /* REQUIREMENTS */
+    function renderRequirements() {
+      const reqs = [
+        'No prior certification experience required',
+        'Basic understanding of cloud computing concepts',
+        'A computer or tablet with an internet connection',
+      ];
+      return `
+      <div style="margin-bottom:40px">
+        <div class="ep-sh">Requirements</div>
+        <ul class="ep-req-list">
+          ${reqs.map(r=>`
+          <li class="ep-req-item">
+            <div class="ep-req-icon">${svgCheck(11)}</div>${r}
+          </li>`).join('')}
+        </ul>
+      </div>`;
+    }
+
+    /* INSTRUCTOR */
+    function renderInstructor() {
+      return `
+      <div style="margin-bottom:40px">
+        <div class="ep-sh">Instructor</div>
+        <div class="ep-inst-band">
+          <div class="ep-inst-av">C</div>
+          <div>
+            <div class="ep-inst-name">${exam.instructor}</div>
+            <div class="ep-inst-role">Senior Cloud &amp; Security Architect</div>
+            <div class="ep-inst-bio">10+ years helping engineers pass certification exams. Specialises in AWS, Kubernetes, and security frameworks across 8 courses.</div>
+          </div>
+          <div class="ep-inst-stats">
+            <div style="text-align:center"><div class="ep-inst-sv">50K+</div><div class="ep-inst-sl">Students</div></div>
+            <div style="text-align:center"><div class="ep-inst-sv">4.9</div><div class="ep-inst-sl">Rating</div></div>
+            <div style="text-align:center"><div class="ep-inst-sv">8</div><div class="ep-inst-sl">Courses</div></div>
+          </div>
+        </div>
+      </div>`;
+    }
+
+    /* REVIEWS */
+    function renderReviews() {
+      const reviews = [
+        {name:'Alex Chen',   color:'#0f6e56',init:'A',date:'2 weeks ago',rating:5,text:'Passed my AWS SAA on the first attempt! The questions closely matched the real exam and each explanation is genuinely useful.'},
+        {name:'Maria Garcia',color:'#185fa5',init:'M',date:'1 month ago', rating:5,text:'The AI hint system is brilliant — it nudges you in the right direction without spoiling the answer. Exactly what I needed.'},
+        {name:'James Liu',   color:'#993c1d',init:'J',date:'1 month ago', rating:4,text:'Scored 890/1000 on the real exam. The practice tests here were harder, which forced me to understand concepts deeply.'},
+        {name:'Sofia Reyes', color:'#534ab7',init:'S',date:'6 weeks ago', rating:5,text:'Clean and focused. The timed mode perfectly replicates real exam pressure. Would recommend to anyone sitting this cert.'},
+      ];
+      return `
+      <div style="margin-bottom:40px">
+        <div class="ep-sh">Reviews</div>
+        <div class="ep-rat-box">
+          <div class="ep-rat-big">
+            <div class="ep-rat-num">${exam.rating}</div>
+            <div class="ep-rat-stars">${'★'.repeat(Math.round(exam.rating))}</div>
+            <div class="ep-rat-lbl">Course Rating</div>
+          </div>
+          <div style="flex:1">
+            ${[5,4,3,2,1].map(s=>{
+              const pct = s===5?70:s===4?20:s===3?6:2;
+              return `
+              <div class="ep-bar-row">
+                <span class="ep-bar-lbl">${s}</span>
+                <div class="ep-bar-track"><div class="ep-bar-fill" style="width:${pct}%"></div></div>
+                <span class="ep-bar-pct">${pct}%</span>
+              </div>`;
+            }).join('')}
+          </div>
+        </div>
+        <div class="ep-review-grid">
+          ${reviews.map(r=>`
+          <div class="ep-review-card">
+            <div class="ep-review-hdr">
+              <div class="ep-review-av" style="background:${r.color}">${r.init}</div>
+              <div><div class="ep-review-name">${r.name}</div><div class="ep-review-date">${r.date}</div></div>
+            </div>
+            <div class="ep-review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
+            <div class="ep-review-txt">${r.text}</div>
+          </div>`).join('')}
+        </div>
+      </div>`;
+    }
+
+    /* CTA STRIP */
+    function renderCta(purchased) {
+      if (purchased) return '';
+      return `
+      <div class="ep-cta">
+        <div>
+          <div class="ep-cta-h">Ready to pass ${exam.title.split(' ').slice(0,4).join(' ')}?</div>
+          <div class="ep-cta-sub">All ${exam.packages} practice tests · 30-day money-back guarantee</div>
+        </div>
+        <div class="ep-cta-right">
+          <div class="ep-cta-price">${Utils.formatPrice(exam.price)}</div>
+          <button class="ep-cta-btn" id="cta-enroll">Enroll Now</button>
+        </div>
+      </div>`;
+    }
+
+    /* ASSEMBLE */
+    function buildPage() {
+      const purchased = State.hasPurchased(exam.id);
+      document.getElementById('page-main').innerHTML =
+        renderHero(purchased)
+        + renderStatsBar()
+        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderInstructor()}${renderReviews()}</div></div>`
+        + renderCta(purchased);
+      bindAll(purchased);
+    }
+
+    function doEnroll() {
+      if (!State.user) { location.href='/pages/login.html'; return; }
+      State.addPurchase(exam.id);
+      Toast.show(`Access granted to ${exam.title}!`);
+      setTimeout(buildPage, 500);
+    }
+
+    function bindAll(purchased) {
+      document.getElementById('hero-enroll')?.addEventListener('click', doEnroll);
+      document.getElementById('cta-enroll')?.addEventListener('click', doEnroll);
+
+      /* pkg toggle */
+      document.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+          openPkg = openPkg===el.dataset.toggle ? null : el.dataset.toggle;
+          redrawPkgs(purchased);
+        });
+      });
+
+      /* rail clicks */
+      document.querySelectorAll('.ep-rail-item').forEach(item => {
+        item.addEventListener('click', () => {
+          if (item.dataset.state==='locked') { doEnroll(); return; }
+          location.href=`/pages/exam-quiz.html?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
+        });
+      });
+    }
+
+    function redrawPkgs(purchased) {
+      const wrap = document.getElementById('pkg-grid');
+      if (!wrap) return;
+      const tmp = document.createElement('div');
+      tmp.innerHTML = renderPackages(purchased);
+      wrap.replaceWith(tmp.querySelector('#pkg-grid'));
+      /* re-bind toggles */
+      document.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+          openPkg = openPkg===el.dataset.toggle ? null : el.dataset.toggle;
+          redrawPkgs(purchased);
+        });
+      });
+      document.getElementById('unlock-btn')?.addEventListener('click', doEnroll);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      State.init(); Toast.init();
+      Nav.render('');
+      Footer.render();
+      const slug = Utils.getParam('slug') || 'aws-saa-c03';
+      exam = MOCK_EXAMS.find(e=>e.slug===slug) || MOCK_EXAMS[0];
+      document.title = exam.title + ' — ExamPrep';
+      buildPage();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Log In — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+<div class="auth-page">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-text">ExamPrep</div>
+      <h2 class="t-h2 mt-8 mb-4">Welcome back</h2>
+      <p class="t-muted t-sm">Log in to continue your learning journey</p>
+    </div>
+
+    <div id="error-box" style="display:none"></div>
+
+    <form id="login-form" style="display:flex;flex-direction:column;gap:16px">
+      <div class="input-group">
+        <label class="input-label">Email address</label>
+        <input class="input" id="email" type="email" placeholder="you@example.com" autocomplete="email" required/>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <input class="input" id="password" type="password" placeholder="Your password" autocomplete="current-password" required/>
+      </div>
+      <div class="flex-between t-sm">
+        <label class="flex-center gap-8" style="cursor:pointer">
+          <input type="checkbox" id="remember" style="accent-color:var(--purple)"/> Remember me
+        </label>
+        <a href="#" style="color:var(--purple)">Forgot password?</a>
+      </div>
+      <button class="btn btn-primary btn-lg w-full" type="submit" id="submit-btn">Log In</button>
+    </form>
+
+    <div class="auth-divider">or continue with</div>
+    <div class="flex gap-12">
+      <button class="btn btn-outline auth-social-btn" onclick="demoLogin('google')">🇬 Google</button>
+      <button class="btn btn-outline auth-social-btn" onclick="demoLogin('github')">⬛ GitHub</button>
+    </div>
+
+    <p class="t-sm t-muted t-center mt-24">
+      Don't have an account? <a href="/pages/signup.html" style="color:var(--purple);font-weight:600">Sign up for free</a>
+    </p>
+    <div class="alert alert-info mt-16" style="font-size:.8rem">
+      <span>💡</span>
+      <div><strong>Demo:</strong> Any email + password works. Use <strong>admin@...</strong> for admin access.</div>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+function showError(msg) {
+  const el = document.getElementById('error-box');
+  el.innerHTML = `<div class="alert alert-error mb-16">${Icons.info(16)} ${msg}</div>`;
+  el.style.display = 'block';
+}
+
+async function doLogin(email, password) {
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
+  try {
+    const res = await API.auth.login({ email, password });
+    const token = res.access_token;
+    State.setToken(token, res.refresh_token);
+    const user = res._user || { id: res.user_id, username: email.split('@')[0], email, role: res.role };
+    State.setUser(user);
+    // Load purchases
+    try {
+      const p = await API.payments.myPurchases();
+      if (p) p.forEach(pu => State.addPurchase(pu.exam_id));
+    } catch {}
+    Toast.show('Welcome back, ' + user.username + '!');
+    const redirect = Utils.getParam('redirect') || '/index.html';
+    window.location.href = redirect;
+  } catch(e) {
+    showError(e.message || 'Login failed. Please check your credentials.');
+    btn.disabled = false;
+    btn.textContent = 'Log In';
+  }
+}
+
+document.getElementById('login-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const email    = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  if (!email || !password) { showError('Please fill in all fields.'); return; }
+  await doLogin(email, password);
+});
+
+function demoLogin(provider) {
+  doLogin(`demo_${provider}@examprep.dev`, 'Demo1234!');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  Nav.render();
+  if (State.user) window.location.href = '/index.html';
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>My Learning — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+
+<!-- Header -->
+<div style="background:var(--navy);padding:40px 0">
+  <div class="container">
+    <h1 class="t-h1" style="color:#fff;margin-bottom:8px">My Learning</h1>
+    <p style="color:rgba(255,255,255,.7)">Continue where you left off</p>
+  </div>
+</div>
+
+<!-- Tabs -->
+<div class="sticky-bar">
+  <div class="container">
+    <div class="tabs" id="learning-tabs">
+      <button class="tab active" data-tab="courses">My Courses</button>
+      <button class="tab" data-tab="progress">Progress</button>
+      <button class="tab" data-tab="history">History</button>
+      <button class="tab" data-tab="wishlist">Wishlist</button>
+    </div>
+  </div>
+</div>
+
+<div class="container" style="padding:32px 24px 64px">
+  <div id="tab-content"></div>
+</div>
+
+<div id="footer-root"></div>
+<script src="/js/app.js"></script>
+<script>
+let activeTab = 'courses';
+
+function requireAuth() {
+  if (!State.user) { window.location.href = '/pages/login.html?redirect=/pages/my-learning.html'; return false; }
+  return true;
+}
+
+// Mock: user has first 3 exams
+function getMyExams() {
+  return MOCK_EXAMS.slice(0,3).map((e,i) => ({
+    ...e,
+    progress: [40,75,20][i],
+    lastPkg: [1,2,1][i],
+    attempts: [2,4,1][i],
+    bestScore: [76,84,65][i],
+  }));
+}
+
+const MOCK_HISTORY = [
+  {exam:'AWS SAA-C03',pkg:'Practice Test 2',score:84,pass:true,date:'Today, 2:34 PM'},
+  {exam:'AWS SAA-C03',pkg:'Practice Test 1',score:71,pass:false,date:'Yesterday, 5:12 PM'},
+  {exam:'CompTIA Security+',pkg:'Practice Test 1',score:79,pass:true,date:'3 days ago'},
+  {exam:'Python Professional',pkg:'Practice Test 1',score:65,pass:false,date:'1 week ago'},
+  {exam:'AWS SAA-C03',pkg:'Practice Test 1',score:62,pass:false,date:'2 weeks ago'},
+];
+
+function renderCourses() {
+  const exams = getMyExams();
+  if (!exams.length) {
+    return `<div class="empty-state"><div class="icon">📚</div><h3 class="t-h3">No courses yet</h3>
+      <p class="t-muted mt-8 mb-16">Browse our catalog and purchase a course to get started</p>
+      <a href="/index.html" class="btn btn-primary">Browse Exams</a></div>`;
+  }
+  return `
+    <div class="section-header">
+      <div><h2 class="t-h2">${exams.length} Course${exams.length!==1?'s':''}</h2></div>
+      <div class="search-wrap" style="width:280px">
+        <span class="search-icon">${Icons.search(14)}</span>
+        <input class="input input-search" placeholder="Filter courses…"/>
+      </div>
+    </div>
+    <div class="grid-3">
+      ${exams.map(e => `
+        <div class="card learning-card" data-slug="${e.slug}">
+          <div class="learning-card-thumb">${e.emoji}</div>
+          <div class="learning-card-body">
+            <div class="learning-card-title truncate-2">${e.title}</div>
+            <div class="learning-card-sub">${e.instructor}</div>
+            <div class="flex-between t-sm mb-4">
+              <span class="t-muted">Progress</span>
+              <span class="t-muted">${e.progress}%</span>
+            </div>
+            <div class="progress-bar mb-16">
+              <div class="progress-fill ${e.progress>=72?'green':''}" style="width:${e.progress}%"></div>
+            </div>
+            <div class="flex gap-8">
+              <a href="/pages/exam-quiz.html?slug=${e.slug}&pkg=pkg-${e.lastPkg}" class="btn btn-primary btn-sm" style="flex:1">Continue →</a>
+              <a href="/pages/exam-detail.html?slug=${e.slug}" class="btn btn-ghost btn-sm btn-icon">${Icons.info(14)}</a>
+            </div>
+            <div class="flex gap-16 mt-12 t-xs t-muted">
+              <span>${Icons.book(12)} ${e.attempts} tests taken</span>
+              <span>${Icons.award(12)} Best: ${e.bestScore}%</span>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderProgress() {
+  const exams = getMyExams();
+  return `
+    <h2 class="t-h2 mb-24">Your Progress</h2>
+    <div class="grid-4 mb-32">
+      ${[
+        {num:'3',lbl:'Enrolled',icon:'book'},
+        {num:'7',lbl:'Tests Taken',icon:'award'},
+        {num:'73%',lbl:'Avg Score',icon:'chart'},
+        {num:'2',lbl:'Tests Passed',icon:'check'},
+      ].map(s => `<div class="stat-card"><div style="color:var(--purple);margin-bottom:8px">${Icons[s.icon]?.(24)||''}</div><div class="stat-card-num">${s.num}</div><div class="stat-card-lbl">${s.lbl}</div></div>`).join('')}
+    </div>
+    ${exams.map(e => `
+      <div class="admin-card mb-16">
+        <div class="flex-between mb-16 flex-wrap gap-12">
+          <div class="flex-center gap-12">
+            <span style="font-size:1.75rem">${e.emoji}</span>
+            <div>
+              <div style="font-weight:700">${e.title}</div>
+              <div class="t-sm t-muted">${e.attempts} tests taken · Best score: ${e.bestScore}%</div>
+            </div>
+          </div>
+          <span class="badge ${e.bestScore>=72?'badge-green':'badge-red'}">${e.bestScore>=72?'Passed':'In Progress'}</span>
+        </div>
+        <div class="flex-between t-sm mb-6"><span class="t-muted">Course Progress</span><span style="font-weight:600">${e.progress}%</span></div>
+        <div class="progress-bar" style="height:12px"><div class="progress-fill ${e.progress>=72?'green':''}" style="width:${e.progress}%"></div></div>
+        <div class="flex gap-8 mt-16 flex-wrap">
+          ${MOCK_PACKAGES.slice(0,6).map((p,i) => {
+            const score = i < e.attempts ? [62,71,76,80,0,0][i] : null;
+            const bg = score===null ? 'var(--surface)' : score>=72 ? 'var(--green-bg)' : 'var(--red-bg)';
+            const color = score===null ? 'var(--ink-soft)' : score>=72 ? 'var(--green)' : 'var(--red)';
+            return `<div style="padding:8px 12px;border-radius:var(--r);background:${bg};color:${color};font-size:.8125rem;font-weight:600">
+              T${i+1}: ${score !== null ? score+'%' : '—'}
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`).join('')}`;
+}
+
+function renderHistory() {
+  return `
+    <div class="flex-between mb-24 flex-wrap gap-12">
+      <h2 class="t-h2">Attempt History</h2>
+      <div class="flex gap-12">
+        <select class="select" style="width:150px;padding:8px 32px 8px 14px">
+          <option>All Exams</option>
+          ${MOCK_EXAMS.slice(0,3).map(e=>`<option>${e.title.split(' ').slice(0,3).join(' ')}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="table-container">
+      <table class="table">
+        <thead><tr><th>Exam</th><th>Practice Test</th><th>Score</th><th>Result</th><th>Date</th><th></th></tr></thead>
+        <tbody>
+          ${MOCK_HISTORY.map(r => `
+            <tr>
+              <td style="font-weight:500">${r.exam}</td>
+              <td class="t-muted t-sm">${r.pkg}</td>
+              <td><strong>${r.score}%</strong></td>
+              <td><span class="badge ${r.pass?'badge-green':'badge-red'}">${r.pass?'PASS':'FAIL'}</span></td>
+              <td class="t-sm t-muted">${r.date}</td>
+              <td><a href="#" class="btn btn-ghost btn-sm t-purple">Review</a></td>
+            </tr>`).join('')}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+function renderWishlist() {
+  const wishlist = MOCK_EXAMS.slice(4,7);
+  if (!wishlist.length) {
+    return `<div class="empty-state"><div class="icon">❤️</div><h3 class="t-h3">Your wishlist is empty</h3>
+      <p class="t-muted mt-8 mb-16">Save exams you're interested in for later</p>
+      <a href="/index.html" class="btn btn-primary">Browse Exams</a></div>`;
+  }
+  return `
+    <h2 class="t-h2 mb-24">Saved for Later</h2>
+    <div class="grid-3">
+      ${wishlist.map(e => `
+        <div class="card exam-card" data-slug="${e.slug}">
+          <div class="exam-card-thumb"><div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${e.emoji}</div></div>
+          <div class="exam-card-body">
+            <div class="exam-card-title truncate-2">${e.title}</div>
+            <div class="exam-card-meta"><span class="exam-card-rating">${e.rating}</span><span class="stars">${Utils.stars(e.rating)}</span></div>
+            <div class="flex gap-8 mt-8">
+              <a href="/pages/exam-detail.html?slug=${e.slug}" class="btn btn-primary btn-sm" style="flex:1">${Utils.formatPrice(e.price)} — Enroll</a>
+              <button class="btn btn-ghost btn-sm btn-icon" title="Remove">❤️</button>
+            </div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+const TABS = { courses: renderCourses, progress: renderProgress, history: renderHistory, wishlist: renderWishlist };
+
+function renderTab() {
+  document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
+  document.querySelectorAll('.learning-card').forEach(c =>
+    c.addEventListener('click', () => window.location.href = `/pages/exam-detail.html?slug=${c.dataset.slug}`)
+  );
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  if (!requireAuth()) return;
+  Nav.render('my-learning');
+  Footer.render();
+  document.querySelectorAll('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      activeTab = tab.dataset.tab;
+      renderTab();
+    });
+  });
+  renderTab();
+});
+</script>
+</body>
+</html>
