@@ -189,7 +189,6 @@ function renderWishlist() {
           <div class="exam-card-thumb"><div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${e.emoji}</div></div>
           <div class="exam-card-body">
             <div class="exam-card-title truncate-2">${e.title}</div>
-            <div class="exam-card-meta"><span class="exam-card-rating">${e.rating}</span><span class="stars">${Utils.stars(e.rating)}</span></div>
             <div class="flex gap-8 mt-8">
               <a href="/pages/exam-detail.html?slug=${e.slug}" class="btn btn-primary btn-sm" style="flex:1">${Utils.formatPrice(e.price)} — Enroll</a>
               <button class="btn btn-ghost btn-sm btn-icon" title="Remove">❤️</button>

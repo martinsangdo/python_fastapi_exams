@@ -39,8 +39,6 @@
     .ep-desc{font-size:.9375rem;line-height:1.7;color:rgba(255,255,255,.65);margin-bottom:24px;max-width:520px}
     .ep-meta{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
     .ep-meta-item{display:flex;align-items:center;gap:8px;font-size:.875rem;color:rgba(255,255,255,.6)}
-    .ep-rating-val{color:#fac775;font-weight:700}
-    .ep-rating-stars{color:#fac775}
     .ep-by{margin-top:24px;font-size:.875rem;color:rgba(255,255,255,.4)}
     .ep-by strong{color:rgba(255,255,255,.7)}
 
@@ -111,16 +109,6 @@
     .ep-sbar-track{height:7px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px}
     .ep-sbar-fill{height:100%;border-radius:3px}
 
-    /* REVIEWS */
-    .ep-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:40px}
-    .ep-review-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
-    .ep-review-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-    .ep-review-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;color:#fff}
-    .ep-review-name{font-weight:600;font-size:.9375rem}
-    .ep-review-date{font-size:.8125rem;color:var(--ink3);margin-top:1px}
-    .ep-review-stars{color:#ef9f27;font-size:.875rem;margin-bottom:7px}
-    .ep-review-txt{font-size:.875rem;line-height:1.6;color:var(--ink2)}
-
     /* INSTRUCTOR */
     .ep-inst-band{background:var(--ink1);border-radius:10px;padding:26px 30px;display:flex;align-items:center;gap:22px;margin-bottom:40px}
     .ep-inst-av{width:64px;height:64px;border-radius:50%;background:var(--acc);color:#fff;font-size:1.625rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.12)}
@@ -137,18 +125,6 @@
     .ep-req-item:last-child{border-bottom:none}
     .ep-req-icon{width:20px;height:20px;border-radius:50%;background:var(--acc-l);color:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
 
-    /* RATING SUMMARY */
-    .ep-rat-box{display:flex;gap:28px;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:20px}
-    .ep-rat-big{text-align:center;flex-shrink:0}
-    .ep-rat-num{font-size:3rem;font-weight:800;color:#ba7517;line-height:1}
-    .ep-rat-stars{color:#ef9f27;font-size:1.2rem;margin-top:3px}
-    .ep-rat-lbl{font-size:.7rem;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
-    .ep-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.8125rem}
-    .ep-bar-track{flex:1;height:7px;background:var(--border);border-radius:3px;overflow:hidden}
-    .ep-bar-fill{height:100%;border-radius:3px;background:#ef9f27}
-    .ep-bar-pct{width:30px;text-align:right;color:var(--ink3)}
-    .ep-bar-lbl{width:14px;color:var(--ink3)}
-
     /* CTA STRIP */
     .ep-cta{background:var(--acc);padding:30px 60px;display:flex;align-items:center;justify-content:space-between;gap:20px}
     .ep-cta-h{color:#fff;font-size:1.25rem;font-weight:700;margin-bottom:5px}
@@ -159,8 +135,8 @@
     .ep-cta-btn:hover{opacity:.9}
 
     /* RESPONSIVE */
-    @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 320px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
-    @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-review-grid{grid-template-columns:1fr}.ep-inst-stats{display:none}}
+    @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 400px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
+    @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-inst-stats{display:none}}
     @media(max-width:640px){.ep-left{padding:28px 20px}.ep-content{padding:24px 20px}.ep-stats-bar{padding:0 20px}.ep-skill-grid{grid-template-columns:1fr}.ep-cta{flex-direction:column;align-items:flex-start;padding:24px 20px}}
   </style>
 </head>
@@ -370,49 +346,6 @@
       </div>`;
     }
 
-    /* REVIEWS */
-    function renderReviews() {
-      const reviews = [
-        {name:'Alex Chen',   color:'#0f6e56',init:'A',date:'2 weeks ago',rating:5,text:'Passed my AWS SAA on the first attempt! The questions closely matched the real exam and each explanation is genuinely useful.'},
-        {name:'Maria Garcia',color:'#185fa5',init:'M',date:'1 month ago', rating:5,text:'The AI hint system is brilliant — it nudges you in the right direction without spoiling the answer. Exactly what I needed.'},
-        {name:'James Liu',   color:'#993c1d',init:'J',date:'1 month ago', rating:4,text:'Scored 890/1000 on the real exam. The practice tests here were harder, which forced me to understand concepts deeply.'},
-        {name:'Sofia Reyes', color:'#534ab7',init:'S',date:'6 weeks ago', rating:5,text:'Clean and focused. The timed mode perfectly replicates real exam pressure. Would recommend to anyone sitting this cert.'},
-      ];
-      return `
-      <div style="margin-bottom:40px">
-        <div class="ep-sh">Reviews</div>
-        <div class="ep-rat-box">
-          <div class="ep-rat-big">
-            <div class="ep-rat-num">4.8</div>
-            <div class="ep-rat-stars">★★★★★</div>
-            <div class="ep-rat-lbl">Course Rating</div>
-          </div>
-          <div style="flex:1">
-            ${[5,4,3,2,1].map(s=>{
-              const pct = s===5?70:s===4?20:s===3?6:2;
-              return `
-              <div class="ep-bar-row">
-                <span class="ep-bar-lbl">${s}</span>
-                <div class="ep-bar-track"><div class="ep-bar-fill" style="width:${pct}%"></div></div>
-                <span class="ep-bar-pct">${pct}%</span>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-        <div class="ep-review-grid">
-          ${reviews.map(r=>`
-          <div class="ep-review-card">
-            <div class="ep-review-hdr">
-              <div class="ep-review-av" style="background:${r.color}">${r.init}</div>
-              <div><div class="ep-review-name">${r.name}</div><div class="ep-review-date">${r.date}</div></div>
-            </div>
-            <div class="ep-review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-            <div class="ep-review-txt">${r.text}</div>
-          </div>`).join('')}
-        </div>
-      </div>`;
-    }
-
     /* CTA STRIP */
     function renderCta(purchased) {
       if (purchased) return '';
@@ -435,7 +368,7 @@
       document.getElementById('page-main').innerHTML =
         renderHero(purchased)
         + renderStatsBar()
-        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderInstructor()}${renderReviews()}</div></div>`
+        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderInstructor()}</div></div>`
         + renderCta(purchased);
       bindAll(purchased);
     }
