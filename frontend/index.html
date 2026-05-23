@@ -44,7 +44,14 @@
       <p class="t-muted t-sm mt-4" id="grid-count"></p>
     </div>
   </div>
-  <div class="grid-4" id="exam-grid"></div>
+  <div class="grid-4" id="exam-grid">
+    <!-- Center the loading icon here -->
+    <div class="loading-icon-container">
+      <div class="loading-icon" style="display: none;">
+        Loading ...
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- Why ExamPrep -->
@@ -98,6 +105,24 @@
 <div id="footer-root"></div>
 
 <script src="/js/app.js"></script>
+<style>
+@keyframes spin {
+  to { stroke-dashoffset: 0; }
+}
+
+.loading-icon-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-icon {
+  animation: spin 2s linear infinite;
+}
+</style>
 <script>
 let CATEGORIES = ['All'];
 let activeCat = 'All', searchQ = '';
@@ -125,6 +150,12 @@ async function loadCategories() {
 }
 
 async function loadCertifications() {
+  const loadingIconContainer = document.querySelector('.loading-icon-container');
+  if (loadingIconContainer) {
+    const loadingIcon = loadingIconContainer.querySelector('.loading-icon');
+    loadingIcon.style.display = 'block';
+  }
+
   try {
     const resp = await fetch('/api/v1/exams/certifications');
     if (!resp.ok) throw new Error('Failed to load certifications');
@@ -152,6 +183,11 @@ async function loadCertifications() {
     }
   } catch (err) {
     console.warn('Could not load certifications from database, using mock data.', err);
+  }
+
+  if (loadingIconContainer) {
+    const loadingIcon = loadingIconContainer.querySelector('.loading-icon');
+    loadingIcon.style.display = 'none';
   }
 }
 
