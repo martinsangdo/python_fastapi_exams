@@ -51,7 +51,8 @@
       <div class="input-group">
         <label class="input-label">Verification Code</label>
         <div class="flex gap-8" style="align-items: center;">
-          <img id="captcha-img" src="" alt="Captcha" style="height:38px; border-radius:4px; border:1px solid var(--border); cursor:pointer" title="Click to refresh"/>
+          <img id="captcha-img" src="" alt="Captcha" style="height:38px; border-radius:4px; border:1px solid var(--border); cursor:pointer" title="Click image to refresh"/>
+          <button type="button" class="btn btn-ghost btn-icon" id="btn-refresh-captcha" title="Refresh code" style="width:38px;height:38px;padding:0;flex-shrink:0"></button>
           <input class="input" id="captcha-answer" placeholder="Enter code" required style="flex:1"/>
           <input type="hidden" id="captcha-id"/>
         </div>
@@ -104,7 +105,8 @@ async function refreshCaptcha() {
   }
 }
 
-document.getElementById('captcha-img').onclick = refreshCaptcha;
+document.getElementById('captcha-img').addEventListener('click', refreshCaptcha);
+document.getElementById('btn-refresh-captcha').addEventListener('click', refreshCaptcha);
 
 async function doSignup(name, email, password, captcha_id, captcha_answer) {
   const btn = document.getElementById('submit-btn');
@@ -150,6 +152,7 @@ document.getElementById('signup-form').addEventListener('submit', async e => {
 
 document.addEventListener('DOMContentLoaded', () => {
   Nav.render();
+  document.getElementById('btn-refresh-captcha').innerHTML = Icons.refresh(18);
   refreshCaptcha();
   if (State.user) window.location.href = '/';
 });

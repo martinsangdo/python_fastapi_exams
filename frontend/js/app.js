@@ -4,7 +4,10 @@
  */
 
 /* ── Config ── */
-const API_BASE = window.EXAMPREP_API || 'http://localhost:8000/api/v1';
+// Use a relative path so the frontend always talks to the server that served it.
+// This prevents connectivity issues when switching between localhost and 127.0.0.1.
+const API_BASE = window.EXAMPREP_API || '/api/v1';
+const MOCK_ALLOWED = true; // Set to false to force real API calls and see actual errors
 
 /* ── State ── */
 const State = {
@@ -68,7 +71,8 @@ const API = {
       return res.json();
     } catch (e) {
       // For demo mode (no backend) return mock data
-      if (e.message.includes('fetch') || e.message.includes('Failed to fetch')) {
+      if (MOCK_ALLOWED && (e.message.includes('fetch') || e.message.includes('Failed to fetch'))) {
+        console.warn(`[API] Connection failed to ${API_BASE}${path}. Falling back to MOCK mode. Data will not be persisted.`);
         return API._mockFallback(method, path, body);
       }
       throw e;
@@ -79,9 +83,10 @@ const API = {
   _mockFallback(method, path, body) {
     if (path.includes('/auth/login') || path.includes('/auth/register')) {
       const email = body?.email || 'user@demo.com';
-      // Simple captcha validation mock
-      if (path.includes('/auth/register') && (!body?.captcha_id || !body?.captcha_answer)) {
-        throw new Error('Captcha verification required');
+      // Improved captcha validation mock (Answer is always 123456 in mock mode)
+      if (path.includes('/auth/register')) {
+        if (!body?.captcha_id || !body?.captcha_answer) throw new Error('Captcha verification required');
+        if (body.captcha_answer !== '123456') throw new Error('Invalid captcha verification code');
       }
       const user = { id: 'u1', username: email.split('@')[0], email, role: email.includes('admin') ? 'admin' : 'user' };
       const token = 'demo_token_' + Date.now();
@@ -89,9 +94,10 @@ const API = {
     }
     if (path.includes('/auth/me')) return State.user;
     if (path.includes('/auth/captcha')) {
+      // Mock captcha always shows "123456"
       return { 
-        id: 'cap_' + Math.random().toString(36).substr(2, 9), 
-        image_url: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFQAAAAZCAYAAAB...' 
+        id: 'mock_captcha_id', 
+        image_url: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTUwIiBoZWlnaHQ9IjUwIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9IiNiNmUzZjQiLz48dGV4dCB4PSI1MCUiIHk9IjUwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9Im1vbm9zcGFjZSIgZm9udC1zaXplPSIyOCIgZm9udC13ZWlnaHQ9ImJvbGQiIGZpbGw9IiMwMDMzNjYiPjEyMzQ1NjwvdGV4dD48L3N2Zz4='
       };
     }
     if (path === '/exams' && method === 'GET') return { items: MOCK_EXAMS, total: MOCK_EXAMS.length, page: 1, page_size: 12, total_pages: 1 };
@@ -314,6 +320,7 @@ const Icons = {
   robot:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8" cy="16" r="1" fill="currentColor"/><circle cx="16" cy="16" r="1" fill="currentColor"/></svg>`,
   tag:    (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
   info:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
+  refresh:(s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>`,
 };
 
 /* ── Nav Component ── */

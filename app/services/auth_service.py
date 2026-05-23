@@ -10,8 +10,9 @@ Authentication business logic — Module 1 (FastAPI MVC) + Module 2 (Security).
 import uuid
 import random
 import string
+import base64
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Any
 import structlog
 
 from app.core.database import get_db
@@ -40,19 +41,42 @@ async def generate_captcha() -> dict:
     answer = ''.join(random.choices(string.digits, k=6))
     await cache_set(CacheKeys.CAPTCHA.format(captcha_id=captcha_id), answer, ttl=300)
     
-    # In a production environment, you would use a library like 'captcha' or 'Pillow' 
-    # to generate an actual image and return it as a base64 string.
+    # Generate a simple SVG image locally to avoid external service issues
+    # and ensure numbers are visible (DiceBear initials style often renders numbers as blank).
+    image_data = _generate_svg_captcha(answer)
+
     return {
         "id": captcha_id,
-        "image_url": f"https://api.dicebear.com/7.x/initials/svg?seed={answer}&backgroundColor=b6e3f4"
+        "image_url": image_data
     }
+
+def _generate_svg_captcha(text: str) -> str:
+    """Generate a simple SVG with text and noise lines, encoded as a data URI."""
+    # dominant-baseline="middle" and text-anchor="middle" centers text in the viewport
+    svg = f"""
+    <svg width="150" height="50" xmlns="http://www.w3.org/2000/svg">
+      <rect width="100%" height="100%" fill="#b6e3f4"/>
+      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" 
+            font-family="monospace" font-size="28" font-weight="bold" fill="#003366" 
+            transform="rotate({random.randint(-8, 8)} 75 25)">
+        {text}
+      </text>
+      <line x1="0" y1="{random.randint(10, 40)}" x2="150" y2="{random.randint(10, 40)}" stroke="#003366" stroke-width="1" opacity="0.2"/>
+      <line x1="{random.randint(10, 140)}" y1="0" x2="{random.randint(10, 140)}" y2="50" stroke="#003366" stroke-width="1" opacity="0.2"/>
+    </svg>
+    """.strip()
+    b64 = base64.b64encode(svg.encode()).decode()
+    return f"data:image/svg+xml;base64,{b64}"
 
 
 async def register_user(data: RegisterRequest) -> dict:
     db = get_db()
 
     # Verify Captcha
-    if not await _verify_captcha(getattr(data, 'captcha_id', None), getattr(data, 'captcha_answer', None)):
+    captcha_id = getattr(data, 'captcha_id', None)
+    captcha_answer = getattr(data, 'captcha_answer', None)
+    if not await _verify_captcha(captcha_id, captcha_answer):
+        log.warning("auth.registration_failed_captcha", email=data.email, captcha_id=captcha_id)
         raise AuthError("Invalid or expired captcha", 400)
 
     # Check uniqueness (MongoDB unique index will also catch races, belt + braces)
@@ -115,14 +139,25 @@ async def logout_user(access_token: str, refresh_token: Optional[str] = None):
     log.info("auth.logout")
 
 
-async def _verify_captcha(captcha_id: str, answer: str) -> bool:
-    if not captcha_id or not answer:
+async def _verify_captcha(captcha_id: str, answer: Any) -> bool:
+    if not captcha_id or answer is None:
+        log.warning("auth.captcha_missing_input", captcha_id=captcha_id, has_answer=answer is not None)
         return False
+
+    # Development Master Key: Bypass captcha in dev mode
+    if settings.APP_ENV == "development" and str(answer) == "000000":
+        log.info("auth.captcha_bypass", captcha_id=captcha_id)
+        return True
+
     key = CacheKeys.CAPTCHA.format(captcha_id=captcha_id)
     stored = await cache_get(key)
-    if stored and stored == answer:
+    
+    # Cast both to string and strip to handle Pydantic int-coercion or accidental whitespace
+    if stored is not None and str(stored).strip() == str(answer).strip():
         await cache_delete(key)
         return True
+
+    log.warning("auth.captcha_mismatch", captcha_id=captcha_id, provided=answer, stored_exists=stored is not None)
     return False
 
 
