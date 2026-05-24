@@ -9,11 +9,12 @@ Security implementations covering Module 2 (Security) + Module 3 (DevSecOps):
 - Prompt injection detection (Module 5 / AI Security)
 """
 import re
+import hashlib
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from jose import JWTError, jwt
-from passlib.context import CryptContext
+import bcrypt
 import structlog
 
 from app.core.config import settings
@@ -21,17 +22,24 @@ from app.core.cache import get_cache
 
 log = structlog.get_logger()
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # ─── Password ────────────────────────────────────────────────────────────────
 
 def hash_password(plain: str) -> str:
-    return pwd_context.hash(plain)
+    """
+    Hash a password using the bcrypt library directly.
+    Bypasses passlib's internal 'detect_wrap_bug' which crashes with bcrypt 4.0+.
+    """
+    pre_hashed = hashlib.sha256(plain.encode()).hexdigest().encode()
+    salt = bcrypt.gensalt()
+    return bcrypt.hashpw(pre_hashed, salt).decode("utf-8")
 
 
 def verify_password(plain: str, hashed: str) -> bool:
-    return pwd_context.verify(plain, hashed)
-
+    try:
+        pre_hashed = hashlib.sha256(plain.encode()).hexdigest().encode()
+        return bcrypt.checkpw(pre_hashed, hashed.encode("utf-8"))
+    except Exception:
+        return False
 
 # ─── JWT ─────────────────────────────────────────────────────────────────────
 

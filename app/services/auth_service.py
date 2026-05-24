@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from typing import Optional, Any
 import structlog
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete, cache_delete_pattern, CacheKeys
 from app.core.security import (
@@ -73,10 +74,8 @@ async def register_user(data: RegisterRequest) -> dict:
     db = get_db()
 
     # Verify Captcha
-    captcha_id = getattr(data, 'captcha_id', None)
-    captcha_answer = getattr(data, 'captcha_answer', None)
-    if not await _verify_captcha(captcha_id, captcha_answer):
-        log.warning("auth.registration_failed_captcha", email=data.email, captcha_id=captcha_id)
+    if not await _verify_captcha(data.captcha_id, data.captcha_answer):
+        log.warning("auth.registration_failed_captcha", email=data.email, captcha_id=data.captcha_id)
         raise AuthError("Invalid or expired captcha", 400)
 
     # Check uniqueness (MongoDB unique index will also catch races, belt + braces)
