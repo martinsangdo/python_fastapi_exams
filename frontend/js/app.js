@@ -394,17 +394,14 @@ const Footer = {
             <div>
               <span class="footer-logo">ExamPrep</span>
               <p class="footer-desc">The most effective way to pass your IT certifications on the first try.</p>
-              <div class="footer-social">
-                ${['🐦','💼','📘','▶'].map(s=>`<div class="footer-social-btn">${s}</div>`).join('')}
-              </div>
             </div>
             <div>
               <h4>Certifications</h4>
-              ${['AWS','Azure','GCP','Security+','CISSP','Kubernetes'].map(l=>`<a href="#">${l}</a>`).join('')}
+              ${['AWS','Azure','GCP','Security+','AI','Project Management'].map(l=>`<a href="#">${l}</a>`).join('')}
             </div>
             <div>
               <h4>Company</h4>
-              ${['About Us','Careers','Blog','Press','Contact'].map(l=>`<a href="#">${l}</a>`).join('')}
+              ${['About Us','Blog','Contact'].map(l=>`<a href="#">${l}</a>`).join('')}
             </div>
             <div>
               <h4>Support</h4>
@@ -413,9 +410,6 @@ const Footer = {
           </div>
           <div class="footer-bottom">
             <span>© 2026 ExamPrep. All rights reserved.</span>
-            <div class="footer-bottom-links">
-              <a href="#">Privacy</a><a href="#">Terms</a><a href="#">Cookies</a>
-            </div>
           </div>
         </div>
       </footer>`;
