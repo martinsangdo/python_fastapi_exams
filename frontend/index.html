@@ -125,8 +125,15 @@ async function loadCategories() {
   }
 }
 
+function enrichExamLogo(exam) {
+  const rawSymbol = exam.symbol || '';
+  const symbol = rawSymbol.toUpperCase();
+  const logo_url = exam.logo_url || (symbol ? `/logos/${symbol}.png` : '');
+  return { ...exam, symbol, logo_url };
+}
+
 async function loadCertifications() {
-  const CACHE_KEY = 'ep_home_certs';
+  const CACHE_KEY = 'ep_home_certs_v2';
   const EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
   // Try to load from cache first
@@ -135,7 +142,7 @@ async function loadCertifications() {
     try {
       const parsed = JSON.parse(cached);
       if (Date.now() - parsed.timestamp < EXPIRY) {
-        MOCK_EXAMS = parsed.data;
+        MOCK_EXAMS = parsed.data.map(enrichExamLogo);
         return; // Use cache and skip fetch
       }
     } catch (e) { localStorage.removeItem(CACHE_KEY); }
@@ -155,7 +162,7 @@ async function loadCertifications() {
     
     // Transform and merge with MOCK_EXAMS
     if (allCerts.length > 0) {
-      MOCK_EXAMS = allCerts.map((cert, idx) => ({
+      MOCK_EXAMS = allCerts.map((cert, idx) => enrichExamLogo({
         id: cert.id,
         slug: cert.slug,
         title: cert.title,
@@ -164,6 +171,8 @@ async function loadCertifications() {
         students: cert.students,
         description: cert.description,
         learns: cert.learns || [],
+        symbol: cert.symbol,
+        logo_url: cert.logo_url,
       }));
 
       // Update Cache
@@ -196,7 +205,7 @@ function examCardHTML(exam) {
     <div class="exam-card-wrap">
       <div class="card exam-card" data-slug="${exam.slug}">
         <div class="exam-card-thumb">
-          <div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)"></div>
+          ${exam.logo_url ? `<img class="exam-card-thumb-img" src="${exam.logo_url}" alt="${exam.title} logo" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:contain;display:block;"/>` : `<div class="exam-card-thumb-placeholder" style="background:var(--navy-soft); width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>`}
         </div>
         <div class="exam-card-body">
           <div class="exam-card-title truncate-2">${exam.title}</div>

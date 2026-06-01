@@ -119,6 +119,9 @@ def _transform_cert(cert: dict) -> dict:
     # Ensure we capture question count from all possible field names used in different collections
     total_q = cert.get("multi_choice_questions") or cert.get("total_questions") or cert.get("questions", 0)
     
+    symbol = cert.get("symbol") or ""
+    normalized_symbol = symbol.upper() if isinstance(symbol, str) else ""
+    logo_url = cert.get("logo_url") or (normalized_symbol and f"/logos/{normalized_symbol}.png") or ""
     return {
         "id": cert.get("id") or str(cert.get("_id")),
         "slug": cert.get("slug") or "",
@@ -132,6 +135,8 @@ def _transform_cert(cert: dict) -> dict:
         "requirements": cert.get("requirements") or [],
         "duration": cert.get("duration") or cert.get("time_limit_minutes") or 0,
         "disclaimer": cert.get("disclaimer", ""),
+        "symbol": normalized_symbol,
+        "logo_url": logo_url,
     }
 
 
