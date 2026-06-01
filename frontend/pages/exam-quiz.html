@@ -30,21 +30,25 @@
 <script>
 const slug   = Utils.getParam('slug');
 const pkgId  = Utils.getParam('pkg') || 'pkg-1';
-const exam   = MOCK_EXAMS.find(e => e.slug === slug) || MOCK_EXAMS[0];
-const pkg    = MOCK_PACKAGES.find(p => p.id === pkgId) || MOCK_PACKAGES[0];
-const questions = MOCK_QUESTIONS;
+let exam     = null;
+let packages = [];
+let pkg      = null;
+let questions = [];
+let questionsError = null;
 
 let currentIdx = 0;
 let answers    = {};     // { qid: [keys] }
 let revealed   = {};     // { qid: true }
-let timeLeft   = pkg.time_limit_minutes * 60;
+let timeLeft   = 0;
 let timerInterval = null;
 let finished   = false;
-let showHint   = false;
-let hintText   = '';
 
-document.getElementById('back-link').href = `/detail/${slug}`;
-document.getElementById('quiz-pkg-title').textContent = pkg.title + ' — ' + exam.title;
+function normalizeQuestionType(type) {
+  if (!type) return 'single';
+  if (type === 'true_false' || type === 'true-false') return 'true_false';
+  if (type.includes('multiple')) return 'multiple';
+  return 'single';
+}
 
 // ── Timer ──────────────────────────────────────────────────────────────────
 function fmtTime(s) {
@@ -107,18 +111,6 @@ function handleFinish() {
   renderResult();
 }
 
-async function getHint() {
-  const q = questions[currentIdx];
-  hintText = 'Loading AI hint...';
-  showHint = true;
-  renderQuestion();
-  try {
-    const res = await API.ai.hint(q.id, 'Give me a hint for this question');
-    hintText = res.hint || 'Think carefully about the key concepts involved.';
-  } catch { hintText = 'Think carefully about the specific requirements and trade-offs mentioned in the question.'; }
-  renderQuestion();
-}
-
 // ── Render ─────────────────────────────────────────────────────────────────
 function renderQuestion() {
   const q = questions[currentIdx];
@@ -162,16 +154,8 @@ function renderQuestion() {
             <p class="t-body">${q.explanation}</p>
           </div>` : ''}
 
-        ${showHint && !revealed[q.id] ? `
-          <div class="hint-box">
-            <div class="hint-title">${Icons.robot(16)} AI Hint</div>
-            <p class="t-sm">${hintText}</p>
-          </div>` : ''}
-
         <div class="quiz-actions">
-          <div class="flex gap-8">
-            ${!revealed[q.id] ? `<button class="btn btn-outline-purple btn-sm" id="hint-btn">${Icons.robot(14)} AI Hint</button>` : ''}
-          </div>
+          <div class="flex gap-8"></div>
           <div class="flex gap-12">
             <button class="btn btn-ghost" id="prev-btn" ${currentIdx===0?'disabled':''}>← Previous</button>
             ${!revealed[q.id]
@@ -219,12 +203,11 @@ function renderQuestion() {
   document.querySelectorAll('.option:not(.revealed)').forEach(o =>
     o.addEventListener('click', () => selectOption(o.dataset.key))
   );
-  document.getElementById('prev-btn')?.addEventListener('click', () => { currentIdx--; showHint=false; renderQuestion(); });
-  document.getElementById('next-btn')?.addEventListener('click', () => { currentIdx++; showHint=false; renderQuestion(); });
+  document.getElementById('prev-btn')?.addEventListener('click', () => { currentIdx--; renderQuestion(); });
+  document.getElementById('next-btn')?.addEventListener('click', () => { currentIdx++; renderQuestion(); });
   document.getElementById('check-btn')?.addEventListener('click', checkAnswer);
   document.getElementById('finish-btn')?.addEventListener('click', handleFinish);
   document.getElementById('submit-btn')?.addEventListener('click', handleFinish);
-  document.getElementById('hint-btn')?.addEventListener('click', getHint);
   document.querySelectorAll('.q-dot').forEach(dot =>
     dot.addEventListener('click', () => { currentIdx = parseInt(dot.dataset.qi); showHint=false; renderQuestion(); })
   );
@@ -298,8 +281,47 @@ function renderResult() {
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   Toast.init();
+
+  try {
+    exam = await API.exams.get(slug);
+  } catch (err) {
+    document.getElementById('quiz-root').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">Exam Not Found</h2><p class="t-muted mt-8">${err.message}</p></div>`;
+    return;
+  }
+
+  try {
+    packages = await API.exams.packages(exam.id);
+  } catch (err) {
+    packages = [];
+  }
+
+  pkg = packages.find(p => p.id === pkgId) || packages[0] || { id: pkgId, title: `Practice Test ${pkgId.replace('pkg-', '')}`, time_limit_minutes: 90, pass_score_pct: 72 };
+
+  try {
+    questions = await API.exams.questions(exam.id, pkg.id);
+  } catch (err) {
+    questions = [];
+    questionsError = err.message || 'Unable to load questions';
+  }
+
+  document.getElementById('back-link').href = `/detail/${slug}`;
+  document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title}`;
+  timeLeft = (pkg.time_limit_minutes || 90) * 60;
+
+  if (questions.length === 0) {
+    document.getElementById('quiz-root').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">${questionsError ? 'Unable to load questions' : 'No questions available'}</h2><p class="t-muted mt-8">${questionsError || 'This practice test does not currently have questions.'}</p></div>`;
+    return;
+  }
+
+  questions = questions.map(q => ({
+    ...q,
+    type: normalizeQuestionType(q.type),
+    correct: Array.isArray(q.correct) ? q.correct : q.correct ? [q.correct] : [],
+    explanation: typeof q.explanation === 'string' ? q.explanation : '',
+  }));
+
   renderQuestion();
   startTimer();
 });

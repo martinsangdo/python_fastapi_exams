@@ -199,8 +199,8 @@ let MOCK_EXAMS = [
 const MOCK_PACKAGES = Array.from({length:6}, (_, i) => ({
   id: `pkg-${i+1}`, order: i+1,
   title: `Practice Test ${i+1}`,
-  description: `Full-length timed exam with ${65 + i*5} questions covering all domains.`,
-  question_count: 65 + i*5, time_limit_minutes: 90, pass_score_pct: 72,
+  description: `Full-length timed exam with 65 questions covering all domains.`,
+  question_count: 65, time_limit_minutes: 90, pass_score_pct: 72,
 }));
 
 const MOCK_QUESTIONS = [
@@ -409,7 +409,7 @@ const Footer = {
             </div>
           </div>
           <div class="footer-bottom">
-            <span>© 2026 ExamPrep. All rights reserved.</span>
+            <span>© ${new Date().getFullYear()} ExamPrep. All rights reserved.</span>
           </div>
         </div>
       </footer>`;

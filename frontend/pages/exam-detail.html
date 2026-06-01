@@ -158,12 +158,14 @@
     }
 
     let exam = null;
+    let packages = [];
     let openPkg = null;
     const SCORES = {'pkg-1':84,'pkg-2':null,'pkg-3':null,'pkg-4':null,'pkg-5':null,'pkg-6':null};
 
     function pkgState(pkg, i, purchased) {
       if (SCORES[pkg.id] !== null) return 'done';
-      if (purchased || i === 0)   return 'free';
+      if (!pkg.question_count) return 'locked';
+      if (purchased || i === 0) return 'free';
       return 'locked';
     }
 
@@ -184,6 +186,20 @@
     }
 
     /* HERO */
+    function getPackageList() {
+      return packages;
+    }
+
+    function getTotalQuestions() {
+      if (exam?.questions) return exam.questions;
+      return getPackageList().reduce((sum, pkg) => sum + (pkg.question_count || 0), 0);
+    }
+
+    function getTestDuration() {
+      if (exam?.duration) return exam.duration;
+      return getPackageList()[0]?.time_limit_minutes || 0;
+    }
+
     function renderHero(purchased) {
       return `
       <section class="ep-hero">
@@ -194,7 +210,7 @@
             <p class="ep-desc">${exam.description}</p>
             <div class="ep-meta">
               <span class="ep-meta-item">${Utils.formatNumber(exam.students)} students enrolled</span>
-              <span class="ep-meta-item">${svgAward(14)} ${6 * exam.questions} questions</span>
+              <span class="ep-meta-item">${svgAward(14)} ${getTotalQuestions()} questions</span>
             </div>
           </div>
         </div>
@@ -214,14 +230,15 @@
 
     /* STATS BAR */
     function renderStatsBar() {
+      const pkgs = getPackageList();
       const done = Object.values(SCORES).filter(s=>s!==null).length;
       const scores = Object.values(SCORES).filter(s=>s!==null);
       const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
       return `
       <div class="ep-stats-bar">
-        <div class="ep-stat"><div class="ep-stat-val">${MOCK_PACKAGES.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${6 * exam.questions}</div><div class="ep-stat-lbl">Questions</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${exam.duration}</div><div class="ep-stat-lbl">Min / Test</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${pkgs.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${getTotalQuestions()}</div><div class="ep-stat-lbl">Questions</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${getTestDuration()}</div><div class="ep-stat-lbl">Min / Test</div></div>
         <div class="ep-stat"><div class="ep-stat-val">72%</div><div class="ep-stat-lbl">Pass Score</div></div>
         ${avg!==null?`<div class="ep-stat"><div class="ep-stat-val" style="color:var(--acc-m)">${avg}%</div><div class="ep-stat-lbl">Avg Score</div></div>`:''}
       </div>`;
@@ -229,20 +246,23 @@
 
     /* RAIL */
     function renderRail(purchased) {
+      const pkgs = getPackageList();
       const done = Object.values(SCORES).filter(s=>s!==null).length;
-      const pct = Math.round(done/MOCK_PACKAGES.length*100);
+      const pct = Math.round(done/(pkgs.length || 1)*100);
       return `
       <aside class="ep-rail">
         <div class="ep-rail-label">Test Packages</div>
-        ${MOCK_PACKAGES.map((pkg,i)=>{
+        ${pkgs.map((pkg,i)=>{
           const state = pkgState(pkg,i,purchased);
           const score = SCORES[pkg.id];
+          const disabled = pkg.question_count === 0;
+          const metaText = disabled ? 'No questions' : state === 'done' ? `Done · ${score}%` : state === 'free' ? 'Ready' : 'Locked';
           return `
-          <div class="ep-rail-item ${state}" data-pkg="${pkg.id}" data-state="${state}">
+          <div class="ep-rail-item ${state}" data-pkg="${pkg.id}" data-state="${state}" data-disabled="${disabled}">
             <div class="ep-rail-badge">${state==='done'?'✓':state==='locked'?'🔒':i+1}</div>
             <div>
               <div class="ep-rail-pname">${pkg.title}</div>
-              <div class="ep-rail-pmeta">${state==='done'?`Done · ${score}%`:state==='free'?'Ready':'Locked'}</div>
+              <div class="ep-rail-pmeta">${metaText}</div>
             </div>
             ${score!==null?`<div class="ep-rail-score">${score}%</div>`:''}
           </div>`;
@@ -251,7 +271,7 @@
         <div class="ep-rail-prog">
           <div class="ep-rail-prog-lbl">Overall Progress</div>
           <div class="ep-rail-track"><div class="ep-rail-fill" style="width:${pct}%"></div></div>
-          <div class="ep-rail-pct">${done} of ${MOCK_PACKAGES.length} completed</div>
+          <div class="ep-rail-pct">${done} of ${pkgs.length} completed</div>
         </div>
       </aside>`;
     }
@@ -273,11 +293,12 @@
 
     /* PACKAGES */
     function renderPackages(purchased) {
+      const pkgs = getPackageList();
       return `
       <div style="margin-bottom:40px">
         <div class="ep-sh">Practice Tests</div>
         <div id="pkg-grid">
-          ${MOCK_PACKAGES.map((pkg,i)=>{
+          ${pkgs.map((pkg,i)=>{
             const state = pkgState(pkg,i,purchased);
             const score = SCORES[pkg.id];
             const isOpen = openPkg===pkg.id;
@@ -311,7 +332,9 @@
                 <p class="t-body t-muted" style="margin-bottom:16px">${pkg.description}</p>
                 ${state==='locked'
                   ?`<button class="btn btn-primary" id="unlock-btn">Unlock with Full Access</button>`
-                  :`<a href="/exam-quiz?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                  : pkg.question_count > 0
+                    ? `<a href="/exam-quiz?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                    : `<span class="t-body t-muted">No questions available</span>`
                 }
               </div>`:''}
             </div>`;
@@ -380,7 +403,8 @@
       /* rail clicks */
       document.querySelectorAll('.ep-rail-item').forEach(item => {
         item.addEventListener('click', () => {
-          if (item.dataset.state==='locked') { doEnroll(); return; }
+          if (item.dataset.disabled === 'true') { return; }
+          if (item.dataset.state === 'locked') { doEnroll(); return; }
           location.href=`/exam-quiz?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
         });
       });
@@ -412,11 +436,19 @@
 
       try {
         exam = await API.exams.get(slug);
-        document.title = exam.title + ' — ExamPrep';
-        buildPage();
       } catch (err) {
         document.getElementById('page-main').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">Exam Not Found</h2><p class="t-muted mt-8">${err.message}</p></div>`;
+        return;
       }
+
+      try {
+        packages = await API.exams.packages(exam.id);
+      } catch {
+        packages = [];
+      }
+
+      document.title = exam.title + ' — ExamPrep';
+      buildPage();
     });
   </script>
 </body>

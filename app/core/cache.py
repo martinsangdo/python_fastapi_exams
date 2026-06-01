@@ -166,7 +166,7 @@ class CacheKeys:
     EXAM_LIST = "exams:list:{category}:{page}"
     EXAM_DETAIL = "exams:detail:{slug}"
     PACKAGE_LIST = "packages:exam:{exam_id}"
-    QUESTION_LIST = "questions:package:{package_id}"
+    QUESTION_LIST = "questions:exam:{exam_id}:package:{package_id}"
     LEADERBOARD = "leaderboard:exam:{exam_id}:top{n}"
     USER_PURCHASES = "purchases:user:{user_id}"
     CERT_METADATA_CATEGORIES = "cert_metadata:categories"

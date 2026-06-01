@@ -135,6 +135,31 @@ def _transform_cert(cert: dict) -> dict:
     }
 
 
+async def _find_cert_metadata(exam_id: str) -> Optional[dict]:
+    db = get_db()
+    meta = None
+    try:
+        meta = await db.tb_cert_metadata.find_one({"_id": ObjectId(exam_id)})
+    except Exception:
+        pass
+    if meta:
+        return meta
+    return await db.tb_cert_metadata.find_one({"id": exam_id})
+
+
+def _package_order_from_id(package_id: str) -> Optional[int]:
+    if not package_id:
+        return None
+    if package_id.startswith("pkg-"):
+        try:
+            return int(package_id.split("-", 1)[1])
+        except ValueError:
+            return None
+    if package_id.isdigit():
+        return int(package_id)
+    return None
+
+
 async def list_cert_categories() -> list[str]:
     cache_key = CacheKeys.CERT_METADATA_CATEGORIES
     cached = await cache_get(cache_key)
@@ -229,15 +254,47 @@ async def list_packages(exam_id: str) -> list[dict]:
         return cached
 
     db = get_db()
-    cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
+    meta = await _find_cert_metadata(exam_id)
     packages = []
-    async for p in cursor:
-        pkg = _serialize(p)
-        # Add aliases for frontend consistency with the main exam header
-        pkg["duration"] = pkg.get("time_limit_minutes", 0)
-        pkg["questions"] = pkg.get("question_count", 0)
-        packages.append(pkg)
-        
+
+    if meta and meta.get("collection_name"):
+        collection = db[meta["collection_name"]]
+        pipeline = [
+            {"$match": {"package": {"$exists": True}}},
+            {"$group": {"_id": "$package", "count": {"$sum": 1}}},
+        ]
+
+        counts = {}
+        async for row in collection.aggregate(pipeline):
+            try:
+                pkg_num = int(row["_id"])
+            except Exception:
+                continue
+            counts[pkg_num] = row["count"]
+
+        duration = meta.get("duration") or meta.get("time_limit_minutes") or 90
+        pass_score_pct = meta.get("pass_score_pct", 72)
+
+        for order in range(1, 7):
+            packages.append({
+                "id": f"pkg-{order}",
+                "exam_id": exam_id,
+                "order": order,
+                "title": f"Practice Test {order}",
+                "description": meta.get("short_brief", ""),
+                "time_limit_minutes": duration,
+                "pass_score_pct": pass_score_pct,
+                "question_count": counts.get(order, 0),
+                "is_active": True,
+            })
+    else:
+        cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
+        async for p in cursor:
+            pkg = _serialize(p)
+            pkg["duration"] = pkg.get("time_limit_minutes", 0)
+            pkg["questions"] = pkg.get("question_count", 0)
+            packages.append(pkg)
+
     await cache_set(cache_key, packages, ttl=300)
     return packages
 
@@ -271,27 +328,67 @@ async def add_question(package_id: str, data: QuestionCreate) -> dict:
     return _serialize(doc)
 
 
-async def list_questions_public(package_id: str) -> list[dict]:
-    """Return questions WITHOUT correct answers — for test-takers."""
-    cache_key = CacheKeys.QUESTION_LIST.format(package_id=package_id)
+async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
+    """Return test questions for a purchased exam package."""
+    cache_key = CacheKeys.QUESTION_LIST.format(exam_id=exam_id, package_id=package_id)
     cached = await cache_get(cache_key)
     if cached:
         return cached
 
     db = get_db()
-    cursor = db.questions.find({"package_id": package_id})
+    meta = await _find_cert_metadata(exam_id)
     questions = []
-    async for q in cursor:
-        # Strip is_correct from options — security: never expose answers to client
-        public_options = [{"key": o["key"], "text": o["text"]} for o in q["options"]]
-        questions.append({
-            "id": str(q["_id"]),
-            "text": q["text"],
-            "type": q["type"],
-            "options": public_options,
-            "tags": q.get("tags", []),
-            "difficulty": q.get("difficulty", "medium"),
-        })
+
+    if meta and meta.get("collection_name"):
+        package_order = _package_order_from_id(package_id)
+        if package_order is None:
+            return []
+
+        collection = db[meta["collection_name"]]
+        cursor = collection.find({"package": package_order})
+        async for q in cursor:
+            opts = q.get("options", {})
+            public_options = []
+            if isinstance(opts, dict):
+                public_options = [{"key": k, "text": v} for k, v in opts.items()]
+            elif isinstance(opts, list):
+                public_options = [{"key": o["key"], "text": o["text"]} for o in opts if o.get("key") is not None]
+
+            answer = q.get("answer")
+            correct = []
+            if isinstance(answer, str) and answer:
+                correct = [answer]
+            elif isinstance(answer, list):
+                correct = [str(a) for a in answer]
+
+            explanation = q.get("explanation", "")
+            if isinstance(explanation, dict):
+                explanation = explanation.get(answer, "") or " ".join([f"{k}: {v}" for k, v in explanation.items()])
+
+            questions.append({
+                "id": q.get("uuid") or str(q.get("_id")),
+                "text": q.get("question") or q.get("text", ""),
+                "type": q.get("type", "single"),
+                "options": public_options,
+                "correct": correct,
+                "explanation": explanation,
+                "tags": q.get("tags", []),
+                "difficulty": q.get("difficulty", "medium"),
+            })
+    else:
+        cursor = db.questions.find({"package_id": package_id})
+        async for q in cursor:
+            public_options = [{"key": o["key"], "text": o["text"]} for o in q["options"]]
+            questions.append({
+                "id": str(q["_id"]),
+                "text": q["text"],
+                "type": q["type"],
+                "options": public_options,
+                "correct": q.get("correct", []),
+                "explanation": q.get("explanation", ""),
+                "tags": q.get("tags", []),
+                "difficulty": q.get("difficulty", "medium"),
+            })
 
     await cache_set(cache_key, questions, ttl=600)
     return questions

@@ -106,13 +106,29 @@ async def create_package(exam_id: str, data: PackageCreate, _=Depends(get_curren
 
 # ── Questions ─────────────────────────────────────────────────────────────────
 
+def _package_order_from_id(package_id: str):
+    if not package_id:
+        return None
+    if package_id.startswith("pkg-"):
+        try:
+            return int(package_id.split("-", 1)[1])
+        except ValueError:
+            return None
+    if package_id.isdigit():
+        return int(package_id)
+    return None
+
 @router.get("/{exam_id}/packages/{package_id}/questions")
-async def list_questions(exam_id: str, package_id: str, current_user=Depends(get_current_user)):
-    from app.services.payment_service import has_access
-    user_id = str(current_user["_id"])
-    if not await has_access(user_id, exam_id):
-        raise HTTPException(403, "Purchase this exam to access questions")
-    return await exam_service.list_questions_public(package_id)
+async def list_questions(exam_id: str, package_id: str, current_user=Depends(get_optional_user)):
+    package_order = _package_order_from_id(package_id)
+    if package_order != 1:
+        if not current_user:
+            raise HTTPException(401, "Not authenticated")
+        from app.services.payment_service import has_access
+        user_id = str(current_user["_id"])
+        if not await has_access(user_id, exam_id):
+            raise HTTPException(403, "Purchase this exam to access questions")
+    return await exam_service.list_questions_public(exam_id, package_id)
 
 
 @router.post("/{exam_id}/packages/{package_id}/questions", status_code=201)
