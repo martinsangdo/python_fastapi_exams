@@ -205,7 +205,7 @@
               <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>
             </div>
             ${purchased
-              ? `<button class="ep-enroll-btn owned" onclick="location='/pages/my-learning.html'">Go to My Learning →</button>`
+              ? `<button class="ep-enroll-btn owned" onclick="location='/my-learning'">Go to My Learning →</button>`
               : `<button class="ep-enroll-btn" id="hero-enroll">Enroll Now</button>`}
           </div>
         </div>
@@ -311,7 +311,7 @@
                 <p class="t-body t-muted" style="margin-bottom:16px">${pkg.description}</p>
                 ${state==='locked'
                   ?`<button class="btn btn-primary" id="unlock-btn">Unlock with Full Access</button>`
-                  :`<a href="/pages/exam-quiz.html?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                  :`<a href="/exam-quiz?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
                 }
               </div>`:''}
             </div>`;
@@ -381,7 +381,7 @@
       document.querySelectorAll('.ep-rail-item').forEach(item => {
         item.addEventListener('click', () => {
           if (item.dataset.state==='locked') { doEnroll(); return; }
-          location.href=`/pages/exam-quiz.html?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
+          location.href=`/exam-quiz?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
         });
       });
     }

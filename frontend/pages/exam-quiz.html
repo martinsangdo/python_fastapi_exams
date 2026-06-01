@@ -43,7 +43,7 @@ let finished   = false;
 let showHint   = false;
 let hintText   = '';
 
-document.getElementById('back-link').href = `/pages/exam-detail.html?slug=${slug}`;
+document.getElementById('back-link').href = `/detail/${slug}`;
 document.getElementById('quiz-pkg-title').textContent = pkg.title + ' — ' + exam.title;
 
 // ── Timer ──────────────────────────────────────────────────────────────────
@@ -253,13 +253,9 @@ function renderResult() {
             <div class="stat-card"><div class="stat-card-num" style="font-size:1.5rem">${timeUsed}</div><div class="stat-card-lbl">Time Used</div></div>
           </div>
           <div class="flex gap-12" style="justify-content:center;flex-wrap:wrap">
-            <a href="/pages/exam-detail.html?slug=${slug}" class="btn btn-outline">← Back to Course</a>
+            <a href="/detail/${slug}" class="btn btn-outline">← Back to Course</a>
             <button class="btn btn-primary" id="retake-btn">Retake Test</button>
-            <a href="/pages/my-learning.html" class="btn btn-ghost">My Learning</a>
-          </div>
-        </div>
-
-        <!-- Answer review -->
+              <a href="/my-learning" class="btn btn-ghost">My Learning</a>
         <h3 class="t-h2 mt-32 mb-20">Review Your Answers</h3>
         ${questions.map((q, i) => {
           const ans = answers[q.id] || [];

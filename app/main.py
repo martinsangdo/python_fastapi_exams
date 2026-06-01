@@ -97,6 +97,7 @@ def create_app() -> FastAPI:
     @app.get("/admin", include_in_schema=False)
     @app.get("/my-learning", include_in_schema=False)
     @app.get("/quiz", include_in_schema=False)
+    @app.get("/exam-quiz", include_in_schema=False)
     async def serve_pages(request: Request):
         page = request.url.path.strip("/")
         filename = "exam-quiz.html" if page == "quiz" else f"{page}.html"

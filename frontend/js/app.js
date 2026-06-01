@@ -226,7 +226,7 @@ const Utils = {
     } else if (page === 'exam-quiz') {
       const slug = params.exam?.slug || params.slug;
       const pkgId = params.pkg?.id || params.pkgId;
-      window.location.href = `/quiz?slug=${slug}&pkg=${pkgId}`;
+      window.location.href = `/exam-quiz?slug=${slug}&pkg=${pkgId}`;
     }
   },
 

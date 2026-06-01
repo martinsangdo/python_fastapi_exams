@@ -41,7 +41,7 @@
 let activeTab = 'courses';
 
 function requireAuth() {
-  if (!State.user) { window.location.href = '/pages/login.html?redirect=/pages/my-learning.html'; return false; }
+  if (!State.user) { window.location.href = '/login?redirect=/my-learning'; return false; }
   return true;
 }
 
@@ -94,8 +94,8 @@ function renderCourses() {
               <div class="progress-fill ${e.progress>=72?'green':''}" style="width:${e.progress}%"></div>
             </div>
             <div class="flex gap-8">
-              <a href="/pages/exam-quiz.html?slug=${e.slug}&pkg=pkg-${e.lastPkg}" class="btn btn-primary btn-sm" style="flex:1">Continue →</a>
-              <a href="/pages/exam-detail.html?slug=${e.slug}" class="btn btn-ghost btn-sm btn-icon">${Icons.info(14)}</a>
+              <a href="/exam-quiz?slug=${e.slug}&pkg=pkg-${e.lastPkg}" class="btn btn-primary btn-sm" style="flex:1">Continue →</a>
+              <a href="/detail/${e.slug}" class="btn btn-ghost btn-sm btn-icon">${Icons.info(14)}</a>
             </div>
             <div class="flex gap-16 mt-12 t-xs t-muted">
               <span>${Icons.book(12)} ${e.attempts} tests taken</span>
@@ -190,7 +190,7 @@ function renderWishlist() {
           <div class="exam-card-body">
             <div class="exam-card-title truncate-2">${e.title}</div>
             <div class="flex gap-8 mt-8">
-              <a href="/pages/exam-detail.html?slug=${e.slug}" class="btn btn-primary btn-sm" style="flex:1">${Utils.formatPrice(e.price)} — Enroll</a>
+              <a href="/detail/${e.slug}" class="btn btn-primary btn-sm" style="flex:1">${Utils.formatPrice(e.price)} — Enroll</a>
               <button class="btn btn-ghost btn-sm btn-icon" title="Remove">❤️</button>
             </div>
           </div>
@@ -203,7 +203,7 @@ const TABS = { courses: renderCourses, progress: renderProgress, history: render
 function renderTab() {
   document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
   document.querySelectorAll('.learning-card').forEach(c =>
-    c.addEventListener('click', () => window.location.href = `/pages/exam-detail.html?slug=${c.dataset.slug}`)
+    c.addEventListener('click', () => window.location.href = `/detail/${c.dataset.slug}`)
   );
 }
 

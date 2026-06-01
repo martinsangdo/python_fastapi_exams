@@ -1,2 +1,2 @@
 #!/usr/bin/env bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --reload --no-access-log
