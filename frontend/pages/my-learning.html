@@ -25,8 +25,6 @@
     <div class="tabs" id="learning-tabs">
       <button class="tab active" data-tab="courses">My Courses</button>
       <button class="tab" data-tab="progress">Progress</button>
-      <button class="tab" data-tab="history">History</button>
-      <button class="tab" data-tab="wishlist">Wishlist</button>
     </div>
   </div>
 </div>
@@ -56,13 +54,6 @@ function getMyExams() {
   }));
 }
 
-const MOCK_HISTORY = [
-  {exam:'AWS SAA-C03',pkg:'Practice Test 2',score:84,pass:true,date:'Today, 2:34 PM'},
-  {exam:'AWS SAA-C03',pkg:'Practice Test 1',score:71,pass:false,date:'Yesterday, 5:12 PM'},
-  {exam:'CompTIA Security+',pkg:'Practice Test 1',score:79,pass:true,date:'3 days ago'},
-  {exam:'Python Professional',pkg:'Practice Test 1',score:65,pass:false,date:'1 week ago'},
-  {exam:'AWS SAA-C03',pkg:'Practice Test 1',score:62,pass:false,date:'2 weeks ago'},
-];
 
 function renderCourses() {
   const exams = getMyExams();
@@ -74,10 +65,6 @@ function renderCourses() {
   return `
     <div class="section-header">
       <div><h2 class="t-h2">${exams.length} Course${exams.length!==1?'s':''}</h2></div>
-      <div class="search-wrap" style="width:280px">
-        <span class="search-icon">${Icons.search(14)}</span>
-        <input class="input input-search" placeholder="Filter courses…"/>
-      </div>
     </div>
     <div class="grid-3">
       ${exams.map(e => `
@@ -145,60 +132,7 @@ function renderProgress() {
       </div>`).join('')}`;
 }
 
-function renderHistory() {
-  return `
-    <div class="flex-between mb-24 flex-wrap gap-12">
-      <h2 class="t-h2">Attempt History</h2>
-      <div class="flex gap-12">
-        <select class="select" style="width:150px;padding:8px 32px 8px 14px">
-          <option>All Exams</option>
-          ${MOCK_EXAMS.slice(0,3).map(e=>`<option>${e.title.split(' ').slice(0,3).join(' ')}</option>`).join('')}
-        </select>
-      </div>
-    </div>
-    <div class="table-container">
-      <table class="table">
-        <thead><tr><th>Exam</th><th>Practice Test</th><th>Score</th><th>Result</th><th>Date</th><th></th></tr></thead>
-        <tbody>
-          ${MOCK_HISTORY.map(r => `
-            <tr>
-              <td style="font-weight:500">${r.exam}</td>
-              <td class="t-muted t-sm">${r.pkg}</td>
-              <td><strong>${r.score}%</strong></td>
-              <td><span class="badge ${r.pass?'badge-green':'badge-red'}">${r.pass?'PASS':'FAIL'}</span></td>
-              <td class="t-sm t-muted">${r.date}</td>
-              <td><a href="#" class="btn btn-ghost btn-sm t-purple">Review</a></td>
-            </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>`;
-}
-
-function renderWishlist() {
-  const wishlist = MOCK_EXAMS.slice(4,7);
-  if (!wishlist.length) {
-    return `<div class="empty-state"><div class="icon">❤️</div><h3 class="t-h3">Your wishlist is empty</h3>
-      <p class="t-muted mt-8 mb-16">Save exams you're interested in for later</p>
-      <a href="/index.html" class="btn btn-primary">Browse Exams</a></div>`;
-  }
-  return `
-    <h2 class="t-h2 mb-24">Saved for Later</h2>
-    <div class="grid-3">
-      ${wishlist.map(e => `
-        <div class="card exam-card" data-slug="${e.slug}">
-          <div class="exam-card-thumb"><div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${e.emoji}</div></div>
-          <div class="exam-card-body">
-            <div class="exam-card-title truncate-2">${e.title}</div>
-            <div class="flex gap-8 mt-8">
-              <a href="/detail/${e.slug}" class="btn btn-primary btn-sm" style="flex:1">${Utils.formatPrice(e.price)} — Enroll</a>
-              <button class="btn btn-ghost btn-sm btn-icon" title="Remove">❤️</button>
-            </div>
-          </div>
-        </div>`).join('')}
-    </div>`;
-}
-
-const TABS = { courses: renderCourses, progress: renderProgress, history: renderHistory, wishlist: renderWishlist };
+const TABS = { courses: renderCourses, progress: renderProgress };
 
 function renderTab() {
   document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
