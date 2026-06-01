@@ -25,8 +25,8 @@
     .ep-left{background:var(--ink1);padding:56px 60px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
     .ep-left::after{content:'';position:absolute;bottom:-60px;right:-60px;width:260px;height:260px;border-radius:50%;border:40px solid rgba(255,255,255,.04)}
     .ep-right{background:var(--acc);display:flex;flex-direction:column;overflow:hidden}
-    .ep-emoji-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative}
-    .ep-emoji-zone::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.15)}
+    .ep-emoji-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative;background:white;}
+    .ep-emoji-zone::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0)}
     .ep-emoji-inner{position:relative;z-index:1;filter:drop-shadow(0 8px 32px rgba(0,0,0,.3))}
     .ep-price-strip{background:rgba(0,0,0,.25);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
     .ep-price-num{font-size:2.25rem;font-weight:800;color:#fff;line-height:1}
@@ -191,7 +191,7 @@
     }
 
     function getTotalQuestions() {
-      if (exam?.questions) return exam.questions;
+      if (exam?.questions) return exam.questions * 6; // legacy support
       return getPackageList().reduce((sum, pkg) => sum + (pkg.question_count || 0), 0);
     }
 
@@ -215,7 +215,9 @@
           </div>
         </div>
         <div class="ep-right">
-          <div class="ep-emoji-zone"><span class="ep-emoji-inner">🎯</span></div>
+          <div class="ep-emoji-zone">
+            ${exam.logo_url ? `<img src="${exam.logo_url}" alt="${exam.title} logo" class="ep-logo-img" loading="lazy" onerror="this.style.display='none'"/>` : `<span class="ep-emoji-inner">🎯</span>`}
+          </div>
           <div class="ep-price-strip">
             <div>
               <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>

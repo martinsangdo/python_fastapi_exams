@@ -242,7 +242,7 @@ textarea.input  { resize:vertical; }
 /* ── Exam Cards ── */
 .exam-card-wrap  { position:relative; }
 .exam-card       { cursor:pointer; }
-.exam-card-thumb { aspect-ratio:16/9; background:var(--navy-soft); position:relative; overflow:hidden; }
+.exam-card-thumb { aspect-ratio:16/9; position:relative; overflow:hidden; }
 .exam-card-thumb-placeholder { width:100%; height:100%; display:flex; align-items:center; justify-content:center; font-size:2.75rem; }
 .exam-card-badge { position:absolute; top:10px; left:10px; }
 .exam-card-body  { padding:14px; }
