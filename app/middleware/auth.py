@@ -120,13 +120,13 @@ async def logging_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start = time.monotonic()
 
-    log.info(
-        "request.start",
-        request_id=request_id,
-        method=request.method,
-        path=request.url.path,
-        ip=request.client.host if request.client else "unknown",
-    )
+    # log.info(
+    #     "request.start",
+    #     request_id=request_id,
+    #     method=request.method,
+    #     path=request.url.path,
+    #     ip=request.client.host if request.client else "unknown",
+    # )
 
     try:
         response = await call_next(request)
@@ -143,14 +143,14 @@ async def logging_middleware(request: Request, call_next):
         raise
 
     duration_ms = round((time.monotonic() - start) * 1000, 2)
-    log.info(
-        "request.complete",
-        request_id=request_id,
-        method=request.method,
-        path=request.url.path,
-        status_code=response.status_code,
-        duration_ms=duration_ms,
-    )
+    # log.info(
+    #     "request.complete",
+    #     request_id=request_id,
+    #     method=request.method,
+    #     path=request.url.path,
+    #     status_code=response.status_code,
+    #     duration_ms=duration_ms,
+    # )
 
     # Add observability headers
     response.headers["X-Request-ID"] = request_id
