@@ -64,19 +64,19 @@ function renderSettings() {
         <div style="display:flex;flex-direction:column;gap:16px" id="profile-form">
           <div class="input-group">
             <label class="input-label">Full Name</label>
-            <input class="input" id="f-name" value="${u.username||''}"/>
+            <input class="input" id="f-name" value="${(u.profile && u.profile.full_name) || ''}" />
           </div>
           <div class="input-group">
             <label class="input-label">Email address</label>
-            <input class="input" id="f-email" type="email" value="${u.email||''}"/>
+            <input class="input" id="f-email" type="email" value="${u.email||''}" disabled />
           </div>
           <div class="input-group">
             <label class="input-label">Username</label>
-            <input class="input" id="f-username" value="${u.username||''}"/>
+            <input class="input" id="f-username" value="${u.username||''}" disabled />
           </div>
           <div class="input-group">
             <label class="input-label">Bio</label>
-            <textarea class="input" rows="3" placeholder="Tell us a bit about yourself…"></textarea>
+            <textarea class="input" id="f-bio" rows="3" placeholder="Tell us a bit about yourself…">${(u.profile && u.profile.bio) || ''}</textarea>
           </div>
           <button class="btn btn-primary" id="save-profile-btn">Save Changes</button>
         </div>
@@ -120,8 +120,9 @@ function renderTab() {
   document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
   document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('f-name')?.value;
+    const bio = document.getElementById('f-bio')?.value;
     try {
-      await API.users.updateProfile({ full_name: name });
+      await API.users.updateProfile({ full_name: name, bio: bio });
       Toast.show('Profile updated!');
     } catch { Toast.show('Profile saved (demo mode)'); }
   });

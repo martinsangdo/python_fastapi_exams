@@ -69,6 +69,7 @@ class RefreshRequest(BaseModel):
 class UserProfile(BaseModel):
     full_name: str = ""
     avatar_url: str = ""
+    bio: str = ""
 
 
 class UserStats(BaseModel):
@@ -91,6 +92,7 @@ class UserResponse(BaseModel):
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = Field(None, max_length=100)
     avatar_url: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=500)
 
 
 # ─── Exam ─────────────────────────────────────────────────────────────────────

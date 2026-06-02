@@ -36,6 +36,7 @@ def new_user(email: str, username: str, hashed_password: str, role: str = "user"
         "profile": {
             "full_name": "",
             "avatar_url": "",
+            "bio": "",
         },
         "stats": {
             "total_attempts": 0,
