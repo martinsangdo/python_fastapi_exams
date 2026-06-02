@@ -242,14 +242,7 @@ const Modal = {
   show({ title, body, footer, size = '' }) {
     const overlay = Utils.el('div', { class: 'modal-overlay', onclick: (e) => { if (e.target === overlay) this.close(); } });
     const modal = Utils.el('div', { class: `modal ${size}` });
-    modal.innerHTML = `
-      <div class="modal-header">
-        <h2 class="t-h2">${title}</h2>
-        <button class="btn btn-ghost btn-icon" id="modal-close">${Icons.x(18)}</button>
-      </div>
-      <div class="modal-body">${body}</div>
-      ${footer ? `<div class="modal-footer">${footer}</div>` : ''}
-    `;
+    modal.innerHTML = '<div class="modal-header"><h2 class="t-h2">' + title + '</h2><button class="btn btn-ghost btn-icon" id="modal-close">' + Icons.x(18) + '</button></div><div class="modal-body">' + body + '</div>' + (footer ? '<div class="modal-footer">' + footer + '</div>' : '');
     overlay.appendChild(modal);
     document.body.appendChild(overlay);
     Utils.qs('#modal-close', modal).onclick = () => this.close();
@@ -261,70 +254,51 @@ const Modal = {
 
 /* ── SVG Icons ── */
 const Icons = {
-  search: (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>`,
-  check:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>`,
-  x:      (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>`,
-  chevron:(s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>`,
-  chevronR:(s=16)=> `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>`,
-  clock:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>`,
-  users:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>`,
-  book:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>`,
-  award:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>`,
-  chart:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>`,
-  logout: (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>`,
-  user:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`,
-  settings:(s=16)=> `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>`,
-  plus:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`,
-  edit:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>`,
-  trash:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>`,
-  lock:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>`,
-  home:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>`,
-  robot:  (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8" cy="16" r="1" fill="currentColor"/><circle cx="16" cy="16" r="1" fill="currentColor"/></svg>`,
-  tag:    (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>`,
-  info:   (s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>`,
-  refresh:(s=16) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>`,
+  search: (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>',
+  check:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20,6 9,17 4,12"/></svg>',
+  x:      (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  chevron:(s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6,9 12,15 18,9"/></svg>',
+  chevronR:(s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9,18 15,12 9,6"/></svg>',
+  clock:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12,6 12,12 16,14"/></svg>',
+  users:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
+  book:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>',
+  award:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg>',
+  chart:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  logout: (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16,17 21,12 16,7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>',
+  user:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
+  settings:(s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
+  plus:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+  edit:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>',
+  trash:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3,6 5,6 21,6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+  lock:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  home:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>',
+  robot:  (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><path d="M12 7v4"/><circle cx="8" cy="16" r="1" fill="currentColor"/><circle cx="16" cy="16" r="1" fill="currentColor"/></svg>',
+  tag:    (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>',
+  info:   (s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>',
+  refresh:(s=16) => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>',
 };
 
 /* ── Nav Component ── */
 const Nav = {
   render(activePage = '') {
     const user = State.user;
-    document.getElementById('nav-root').innerHTML = `
-      <nav class="nav">
-        <div class="nav-inner">
-          <a href="/" class="nav-logo">
-            <div class="nav-logo-icon">E</div>
-            ExamPrep
-          </a>
-          <div class="nav-links">
-            ${user ? `<a href="/my-learning" class="nav-link ${activePage==='my-learning'?'active':''}">My Learning</a>` : ''}
-            ${user?.role === 'admin' ? `<a href="/admin" class="nav-link ${activePage==='admin'?'active':''}">Admin</a>` : ''}
-            ${user ? `
-              <div class="nav-avatar-wrap">
-                <div class="nav-avatar" id="nav-avatar">${user.username[0].toUpperCase()}</div>
-                <div class="nav-dropdown" id="nav-dropdown">
-                  <div class="nav-user-info">
-                    <div class="nav-user-name">${user.username}</div>
-                    <div class="nav-user-email">${user.email}</div>
-                  </div>
-                  <a href="/profile" class="nav-dropdown-item">${Icons.user(16)} My Profile</a>
-                  <a href="/my-learning" class="nav-dropdown-item">${Icons.book(16)} My Learning</a>
-                  ${user.role==='admin' ? `<a href="/admin" class="nav-dropdown-item">${Icons.settings(16)} Admin</a>` : ''}
-                  <div class="divider"></div>
-                  <div class="nav-dropdown-item danger" id="nav-logout">${Icons.logout(16)} Log Out</div>
-                </div>
-              </div>
-            ` : `
-              <a href="/login" class="btn btn-ghost">Log in</a>
-              <a href="/signup" class="btn btn-primary">Sign up</a>
-            `}
-          </div>
-        </div>
-      </nav>`;
+    let navLinksHTML = user ? '<a href="/my-learning" class="nav-link' + (activePage==='my-learning'?' active':'') + '">My Learning</a>' : '';
+    navLinksHTML += '<a href="/help-center" class="nav-link' + (activePage==='help'?' active':'') + '">Help</a>';
+    navLinksHTML += user?.role === 'admin' ? '<a href="/admin" class="nav-link' + (activePage==='admin'?' active':'') + '">Admin</a>' : '';
+    
+    let userMenuHTML = '';
+    if (user) {
+      userMenuHTML = '<div class="nav-avatar-wrap"><div class="nav-avatar" id="nav-avatar">' + user.username[0].toUpperCase() + '</div><div class="nav-dropdown" id="nav-dropdown"><div class="nav-user-info"><div class="nav-user-name">' + user.username + '</div><div class="nav-user-email">' + user.email + '</div></div><a href="/profile" class="nav-dropdown-item">' + Icons.user(16) + ' My Profile</a><a href="/my-learning" class="nav-dropdown-item">' + Icons.book(16) + ' My Learning</a>' + (user.role==='admin' ? '<a href="/admin" class="nav-dropdown-item">' + Icons.settings(16) + ' Admin</a>' : '') + '<div class="divider"></div><div class="nav-dropdown-item danger" id="nav-logout">' + Icons.logout(16) + ' Log Out</div></div></div>';
+    } else {
+      userMenuHTML = '<a href="/login" class="btn btn-ghost">Log in</a><a href="/signup" class="btn btn-primary">Sign up</a>';
+    }
+    
+    const navHTML = '<nav class="nav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon">E</div>ExamPrep</a><div class="nav-links">' + navLinksHTML + userMenuHTML + '</div></div></nav>';
+    document.getElementById('nav-root').innerHTML = navHTML;
 
     // Search
     const si = document.getElementById('nav-search-input');
-    if (si) si.addEventListener('keydown', e => { if (e.key==='Enter' && si.value.trim()) window.location.href = `/?q=${encodeURIComponent(si.value.trim())}`; });
+    if (si) si.addEventListener('keydown', e => { if (e.key==='Enter' && si.value.trim()) window.location.href = '/?q=' + encodeURIComponent(si.value.trim()); });
 
     // Dropdown
     const avatar = document.getElementById('nav-avatar');
@@ -346,32 +320,9 @@ const Nav = {
 /* ── Footer Component ── */
 const Footer = {
   render() {
-    document.getElementById('footer-root').innerHTML = `
-      <footer class="footer">
-        <div class="container">
-          <div class="footer-grid">
-            <div>
-              <span class="footer-logo">ExamPrep</span>
-              <p class="footer-desc">The most effective way to pass your IT certifications on the first try.</p>
-            </div>
-            <div>
-              <h4>Certifications</h4>
-              ${['AWS','Azure','GCP','Security+','AI','Project Management'].map(l=>`<a href="#">${l}</a>`).join('')}
-            </div>
-            <div>
-              <h4>Company</h4>
-              ${['About Us','Blog','Contact'].map(l=>`<a href="#">${l}</a>`).join('')}
-            </div>
-            <div>
-              <h4>Support</h4>
-              ${['Help Center','Refund Policy','Accessibility','Privacy Policy','Terms'].map(l=>`<a href="#">${l}</a>`).join('')}
-            </div>
-          </div>
-          <div class="footer-bottom">
-            <span>© ${new Date().getFullYear()} ExamPrep. All rights reserved.</span>
-          </div>
-        </div>
-      </footer>`;
+    const certsHTML = ['AWS','Azure','GCP','Security+','AI','Project Management'].map(l => '<a href="#">' + l + '</a>').join('');
+    const footerHTML = '<footer class="footer"><div class="container"><div class="footer-grid"><div><span class="footer-logo">ExamPrep</span><p class="footer-desc">The most effective way to pass your IT certifications on the first try.</p></div><div><h4>Certifications</h4>' + certsHTML + '</div><div><h4>Company</h4><a href="/about-us">About Us</a><a href="/contact">Contact</a></div><div><h4>Support</h4><a href="/help-center">Help Center</a><a href="/refund-policy">Refund Policy</a><a href="/accessibility">Accessibility</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms</a></div></div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ExamPrep. All rights reserved.</span></div></div></footer>';
+    document.getElementById('footer-root').innerHTML = footerHTML;
   },
 };
 

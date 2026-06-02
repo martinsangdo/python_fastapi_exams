@@ -98,8 +98,16 @@ def create_app() -> FastAPI:
     @app.get("/my-learning", include_in_schema=False)
     @app.get("/quiz", include_in_schema=False)
     @app.get("/exam-quiz", include_in_schema=False)
+    @app.get("/help-center", include_in_schema=False)
+    @app.get("/refund-policy", include_in_schema=False)
+    @app.get("/accessibility", include_in_schema=False)
+    @app.get("/privacy-policy", include_in_schema=False)
+    @app.get("/terms", include_in_schema=False)
+    @app.get("/about-us", include_in_schema=False)
+    @app.get("/contact", include_in_schema=False)
     async def serve_pages(request: Request):
         page = request.url.path.strip("/")
+        # special mapping: "quiz" -> exam-quiz.html
         filename = "exam-quiz.html" if page == "quiz" else f"{page}.html"
         frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
         return FileResponse(os.path.join(frontend_path, "pages", filename))

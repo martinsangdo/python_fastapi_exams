@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>About Us — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+  <div id="nav-root"></div>
+  <main class="container py-40">
+    <a href="/" class="t-sm t-muted">← Back to Home</a>
+    <h1 class="t-h2 mt-12">About ExamPrep</h1>
+    <p class="t-body t-muted mt-8">ExamPrep is dedicated to helping students pass IT certification exams through focused practice and high-quality instruction.</p>
+
+    <section class="mt-24">
+      <h2 class="t-h4">Our Mission</h2>
+      <p class="t-body t-muted">We create realistic practice tests, explanations, and study materials designed by instructors with real-world experience to bridge the gap between learning and certification success.</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Our Instructors</h2>
+      <p class="t-body t-muted">Our team includes many qualified instructors with industry certifications and years of teaching experience. They design content, review questions, and produce guidance to ensure exam relevance.</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Headquarters</h2>
+      <p class="t-body t-muted">ExamPrep is headquartered in the United States and serves students worldwide.</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Careers & Partnerships</h2>
+      <p class="t-body t-muted">Interested in joining our instructor team or partnering with us? Email <a href="mailto:careers@example.com">careers@example.com</a>.</p>
+    </section>
+  </main>
+  <div id="footer-root"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Nav.render('about');
+      Footer.render();
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Contact — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+  <div id="nav-root"></div>
+  <main class="container py-40">
+    <a href="/" class="t-sm t-muted">← Back to Home</a>
+    <h1 class="t-h2 mt-12">Contact Us</h1>
+    <p class="t-body t-muted mt-8">We're here to help. Use the contact details below or email our support team.</p>
+
+    <section class="mt-24">
+      <h2 class="t-h4">Support</h2>
+      <p class="t-body t-muted">For help with accounts, purchases, or technical issues, email <a href="mailto:support@example.com">support@example.com</a>.</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Address</h2>
+      <p class="t-body t-muted">Headquarters: 123 Learning Way, Suite 100, Anytown, USA</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Phone</h2>
+      <p class="t-body t-muted">US: +1 (555) 123-4567</p>
+    </section>
+
+    <section class="mt-20">
+      <h2 class="t-h4">Business Inquiries</h2>
+      <p class="t-body t-muted">For partnerships or media, email <a href="mailto:business@example.com">business@example.com</a>.</p>
+    </section>
+  </main>
+  <div id="footer-root"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Nav.render('contact');
+      Footer.render();
+    });
+  </script>
+</body>
+</html>
