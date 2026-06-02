@@ -158,42 +158,6 @@ const API = {
 
 /* ── Mock Data ── */
 let MOCK_EXAMS = [
-  { 
-    id:'1', 
-    slug:'aws-certified-solutions-architect-associate-saa-c03', 
-    title:'AWS Certified Solutions Architect – Associate (SAA-C03)', 
-    category:'Cloud', 
-    price:29.99, 
-    students:12400, 
-    questions:360, 
-    description:'Master AWS architecture patterns with hands-on practice. Covers EC2, S3, VPC, RDS, Lambda, CloudFront, and all SAA-C03 exam domains.', 
-    learns:['AWS core services','High-availability design','Cost optimization','Security best practices','Network architecture','Database selection'],
-    requirements:['Basic understanding of cloud computing concepts', 'Experience with virtualization is helpful']
-  },
-  { 
-    id:'4', 
-    slug:'aws-certified-cloud-practitioner-clf-c02', 
-    title:'AWS Certified Cloud Practitioner (CLF-C02)', 
-    category:'Cloud', 
-    price:14.99, 
-    students:23000, 
-    questions:300, 
-    description:'Entry-level AWS certification covering cloud concepts, services, pricing, and support.', 
-    learns:['Cloud concepts','AWS infrastructure','Core services','Security','Billing','Support plans'],
-    requirements:['No prior technical background required']
-  },
-  { 
-    id:'5', 
-    slug:'professional-scrum-master-i-psm-i', 
-    title:'Professional Scrum Master I (PSM I)', 
-    category:'Agile', 
-    price:15.00, 
-    students:15000, 
-    questions:80, 
-    description:'Fundamental knowledge of the Scrum framework and how to apply it in real-world situations.', 
-    learns:['Scrum Theory','Scrum Framework','Product Backlog management','Sprint management','Scrum Roles'],
-    requirements:['Familiarity with software development lifecycle (SDLC)']
-  },
 ];
 
 const MOCK_PACKAGES = Array.from({length:6}, (_, i) => ({
@@ -204,11 +168,6 @@ const MOCK_PACKAGES = Array.from({length:6}, (_, i) => ({
 }));
 
 const MOCK_QUESTIONS = [
-  { id:'q1', text:'A company needs to store 100TB of data accessed once per month at lowest cost. Which S3 storage class should they use?', type:'single', options:[{key:'A',text:'S3 Standard'},{key:'B',text:'S3 Glacier Deep Archive'},{key:'C',text:'S3 Intelligent-Tiering'},{key:'D',text:'S3 One Zone-IA'}], correct:['B'], explanation:'S3 Glacier Deep Archive is the lowest-cost storage class at ~$0.00099/GB/month. Ideal for data accessed once or twice per year.', difficulty:'medium', tags:['s3','storage'] },
-  { id:'q2', text:'Which AWS services support VPC Gateway Endpoints? (Select TWO)', type:'multiple', options:[{key:'A',text:'Amazon S3'},{key:'B',text:'Amazon DynamoDB'},{key:'C',text:'Amazon EC2'},{key:'D',text:'Amazon RDS'}], correct:['A','B'], explanation:'VPC Gateway Endpoints support only Amazon S3 and DynamoDB. They enable private connectivity without internet gateway.', difficulty:'hard', tags:['vpc','networking'] },
-  { id:'q3', text:'Amazon RDS Multi-AZ automatically replicates to a standby instance in the SAME Availability Zone.', type:'true_false', options:[{key:'A',text:'True'},{key:'B',text:'False'}], correct:['B'], explanation:'Multi-AZ deploys a standby replica in a DIFFERENT AZ for high availability and automatic failover.', difficulty:'easy', tags:['rds','ha'] },
-  { id:'q4', text:'An application needs to process messages in strict FIFO order with exactly-once processing. Which SQS queue type should be used?', type:'single', options:[{key:'A',text:'Standard Queue'},{key:'B',text:'FIFO Queue'},{key:'C',text:'Dead Letter Queue'},{key:'D',text:'Delay Queue'}], correct:['B'], explanation:'SQS FIFO queues guarantee exactly-once delivery and strict message ordering. Standard queues offer best-effort ordering.', difficulty:'medium', tags:['sqs','messaging'] },
-  { id:'q5', text:'Which EC2 pricing model offers the greatest discount (up to 90%) compared to On-Demand?', type:'single', options:[{key:'A',text:'Reserved Instances'},{key:'B',text:'Dedicated Hosts'},{key:'C',text:'Spot Instances'},{key:'D',text:'Savings Plans'}], correct:['C'], explanation:'Spot Instances can save up to 90% by using AWS spare capacity, but can be interrupted with 2-minute notice.', difficulty:'easy', tags:['ec2','pricing'] },
 ];
 
 /* ── Utility helpers ── */
