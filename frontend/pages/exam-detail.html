@@ -160,7 +160,7 @@
     let exam = null;
     let packages = [];
     let openPkg = null;
-    const SCORES = {'pkg-1':84,'pkg-2':null,'pkg-3':null,'pkg-4':null,'pkg-5':null,'pkg-6':null};
+    const SCORES = {'pkg-1': null, 'pkg-2': null, 'pkg-3': null, 'pkg-4': null, 'pkg-5': null, 'pkg-6': null};
 
     function pkgState(pkg, i, purchased) {
       if (SCORES[pkg.id] !== null) return 'done';
@@ -233,9 +233,7 @@
     /* STATS BAR */
     function renderStatsBar() {
       const pkgs = getPackageList();
-      const done = Object.values(SCORES).filter(s=>s!==null).length;
-      const scores = Object.values(SCORES).filter(s=>s!==null);
-      const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+      const avg = exam?.avg_pass_rate != null ? Math.round(exam.avg_pass_rate) : null;
       return `
       <div class="ep-stats-bar">
         <div class="ep-stat"><div class="ep-stat-val">${pkgs.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>

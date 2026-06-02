@@ -135,6 +135,7 @@ def _transform_cert(cert: dict) -> dict:
         "requirements": cert.get("requirements") or [],
         "duration": cert.get("duration") or cert.get("time_limit_minutes") or 0,
         "disclaimer": cert.get("disclaimer", ""),
+        "avg_pass_rate": cert.get("avg_pass_rate"),
         "symbol": normalized_symbol,
         "logo_url": logo_url,
     }
