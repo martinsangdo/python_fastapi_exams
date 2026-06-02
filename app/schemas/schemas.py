@@ -312,8 +312,8 @@ class CreateCheckoutRequest(BaseModel):
 
 
 class CheckoutResponse(BaseModel):
-    checkout_url: str
-    session_id: str
+    approval_url: str   # redirect user here to approve payment on PayPal
+    order_id: str
 
 
 class PurchaseResponse(BaseModel):

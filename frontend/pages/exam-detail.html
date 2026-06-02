@@ -381,11 +381,18 @@
       bindAll(purchased);
     }
 
-    function doEnroll() {
-      if (!State.user) { location.href='/pages/login.html'; return; }
-      State.addPurchase(exam.id);
-      Toast.show(`Access granted to ${exam.title}!`);
-      setTimeout(buildPage, 500);
+    async function doEnroll() {
+      if (!State.user) { location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; }
+      try {
+        const res = await API.payments.checkout(exam.id);
+        if (res.approval_url) {
+          location.href = res.approval_url;
+        } else {
+          Toast.show('Could not start checkout. Please try again.', 'error');
+        }
+      } catch (e) {
+        Toast.show(e.message || 'Checkout failed', 'error');
+      }
     }
 
     function bindAll(purchased) {
@@ -430,7 +437,7 @@
       State.init(); Toast.init();
       Nav.render('');
       Footer.render();
-      
+
       const pathParts = window.location.pathname.split('/');
       const slug = pathParts[pathParts.indexOf('detail') + 1];
 
@@ -445,6 +452,19 @@
         packages = await API.exams.packages(exam.id);
       } catch {
         packages = [];
+      }
+
+      // Sync purchase state from the real API so localStorage can't be spoofed
+      if (State.user) {
+        try {
+          const purchases = await API.payments.myPurchases();
+          State.purchases = (purchases || []).map(p => p.exam_id);
+          localStorage.setItem('ep_purchases', JSON.stringify(State.purchases));
+        } catch {
+          // fall back to cached localStorage value
+        }
+      } else {
+        State.purchases = [];
       }
 
       document.title = exam.title + ' — ExamPrep';

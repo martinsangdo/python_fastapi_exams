@@ -54,9 +54,9 @@ async def list_my_attempts(
 
 
 """
-app/api/v1/endpoints/payments.py — Payment routes
+app/api/v1/endpoints/payments.py — Payment routes (PayPal)
 """
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+from fastapi import APIRouter, Depends, HTTPException, Request
 from app.schemas.schemas import CreateCheckoutRequest
 from app.services import payment_service
 from app.middleware.auth import get_current_user
@@ -66,6 +66,7 @@ payments_router = APIRouter(prefix="/payments", tags=["Payments"])
 
 @payments_router.post("/checkout")
 async def create_checkout(data: CreateCheckoutRequest, current_user=Depends(get_current_user)):
+    """Create a PayPal order. Returns approval_url — redirect the user there to pay."""
     try:
         return await payment_service.create_checkout_session(
             str(current_user["_id"]), data.exam_id
@@ -74,23 +75,28 @@ async def create_checkout(data: CreateCheckoutRequest, current_user=Depends(get_
         raise HTTPException(400, str(e))
 
 
+@payments_router.post("/capture")
+async def capture_payment(order_id: str, current_user=Depends(get_current_user)):
+    """
+    Capture an approved PayPal order and grant access to the exam.
+    Call this after the user returns from the PayPal approval page
+    (the return_url receives ?token=ORDER_ID — pass that here as order_id).
+    """
+    try:
+        return await payment_service.capture_order(str(current_user["_id"]), order_id)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
+
+
 @payments_router.post("/webhook")
-async def stripe_webhook(request: Request, stripe_signature: str = Header(None)):
+async def paypal_webhook(request: Request):
+    """PayPal webhook — PAYMENT.CAPTURE.COMPLETED as a fulfill fallback."""
     payload = await request.body()
-    return await payment_service.handle_webhook(payload, stripe_signature or "")
-
-
-@payments_router.post("/fulfill")
-async def manual_fulfill(
-    exam_id: str,
-    payment_id: str,
-    amount: float,
-    current_user=Depends(get_current_user),
-):
-    """Demo endpoint — in production, only the Stripe webhook should call fulfill."""
-    return await payment_service.fulfill_purchase(
-        str(current_user["_id"]), exam_id, amount, payment_id
-    )
+    headers = dict(request.headers)
+    try:
+        return await payment_service.handle_webhook(payload, headers)
+    except ValueError as e:
+        raise HTTPException(400, str(e))
 
 
 @payments_router.get("/my-purchases")

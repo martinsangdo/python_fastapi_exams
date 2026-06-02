@@ -402,8 +402,26 @@ async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
                 "difficulty": q.get("difficulty", "medium"),
             })
 
-    await cache_set(cache_key, questions, ttl=600)
+    await cache_set(cache_key, questions, ttl=604800)  # 7 days
     return questions
+
+
+PREVIEW_QUESTION_COUNT = 5
+
+async def list_preview_questions(exam_id: str, package_id: str, all_questions: list) -> list:
+    """
+    Return a stable 5-question preview for package 1 (non-paying users).
+    The selection is cached so the same 5 questions are shown on every visit.
+    """
+    cache_key = f"questions:preview:{exam_id}:{package_id}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    import random
+    sample = random.sample(all_questions, min(PREVIEW_QUESTION_COUNT, len(all_questions)))
+    await cache_set(cache_key, sample, ttl=604800)  # 7 days
+    return sample
 
 
 async def get_question_with_answers(question_id: str) -> Optional[dict]:

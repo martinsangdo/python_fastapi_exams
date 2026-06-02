@@ -30,109 +30,171 @@
 </div>
 
 <div class="container" style="padding:32px 24px 64px">
-  <div id="tab-content"></div>
+  <div id="tab-content"><div class="loading-spinner" style="margin:60px auto"></div></div>
 </div>
 
 <div id="footer-root"></div>
 <script src="/js/app.js"></script>
 <script>
 let activeTab = 'courses';
+let pageData = null; // { courses, completedAttempts }
 
 function requireAuth() {
   if (!State.user) { window.location.href = '/login?redirect=/my-learning'; return false; }
   return true;
 }
 
-// Mock: user has first 3 exams
-function getMyExams() {
-  return MOCK_EXAMS.slice(0,3).map((e,i) => ({
-    ...e,
-    progress: [40,75,20][i],
-    lastPkg: [1,2,1][i],
-    attempts: [2,4,1][i],
-    bestScore: [76,84,65][i],
-  }));
+async function loadData() {
+  const [purchases, attemptsRes, examsRes] = await Promise.all([
+    API.payments.myPurchases(),
+    API.attempts.list(),
+    API.exams.list({ page_size: 50 }),
+  ]);
+
+  const examById = {};
+  (examsRes?.items || []).forEach(e => { examById[e.id] = e; });
+
+  const completedAttempts = (attemptsRes?.items || []).filter(a => a.status === 'completed');
+
+  const attemptsByExam = {};
+  completedAttempts.forEach(a => {
+    if (!attemptsByExam[a.exam_id]) attemptsByExam[a.exam_id] = [];
+    attemptsByExam[a.exam_id].push(a);
+  });
+
+  const courses = (purchases || []).map(p => {
+    const exam = examById[p.exam_id];
+    const examAttempts = attemptsByExam[p.exam_id] || [];
+    const scores = examAttempts.map(a => a.score).filter(s => s != null);
+    const bestScore = scores.length ? Math.max(...scores) : null;
+    return { exam, purchase: p, attempts: examAttempts, bestScore };
+  }).filter(c => c.exam);
+
+  return { courses, completedAttempts };
 }
 
-
-function renderCourses() {
-  const exams = getMyExams();
-  if (!exams.length) {
-    return `<div class="empty-state"><div class="icon">📚</div><h3 class="t-h3">No courses yet</h3>
+function renderCourses(courses) {
+  if (!courses.length) {
+    return `<div class="empty-state">
+      <div class="icon">📚</div>
+      <h3 class="t-h3">No courses yet</h3>
       <p class="t-muted mt-8 mb-16">Browse our catalog and purchase a course to get started</p>
-      <a href="/" class="btn btn-primary">Browse Exams</a></div>`;
+      <a href="/" class="btn btn-primary">Browse Exams</a>
+    </div>`;
   }
   return `
     <div class="section-header">
-      <div><h2 class="t-h2">${exams.length} Course${exams.length!==1?'s':''}</h2></div>
+      <div><h2 class="t-h2">${courses.length} Course${courses.length !== 1 ? 's' : ''}</h2></div>
     </div>
     <div class="grid-3">
-      ${exams.map(e => `
-        <div class="card learning-card" data-slug="${e.slug}">
-          <div class="learning-card-thumb">${e.emoji}</div>
-          <div class="learning-card-body">
-            <div class="learning-card-title truncate-2">${e.title}</div>
-            <div class="learning-card-sub">${e.instructor}</div>
-            <div class="flex-between t-sm mb-4">
-              <span class="t-muted">Progress</span>
-              <span class="t-muted">${e.progress}%</span>
+      ${courses.map(({ exam, attempts, bestScore }) => {
+        const totalAttempts = attempts.length;
+        const passCount = attempts.filter(a => a.passed).length;
+        const lastAttempt = attempts.sort((a, b) => new Date(b.started_at) - new Date(a.started_at))[0];
+        const lastPkg = lastAttempt?.package_id || null;
+        const continueHref = lastPkg
+          ? `/exam-quiz?slug=${exam.slug}&pkg=${lastPkg}`
+          : `/detail/${exam.slug}`;
+        return `
+          <div class="card learning-card" data-slug="${exam.slug}">
+            <div class="learning-card-thumb" style="background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2rem;min-height:100px">
+              ${exam.thumbnail_url
+                ? `<img src="${exam.thumbnail_url}" style="width:100%;height:100%;object-fit:cover" alt="" />`
+                : '📋'}
             </div>
-            <div class="progress-bar mb-16">
-              <div class="progress-fill ${e.progress>=72?'green':''}" style="width:${e.progress}%"></div>
+            <div class="learning-card-body">
+              <div class="learning-card-title truncate-2">${exam.title}</div>
+              <div class="learning-card-sub">${exam.category}</div>
+              ${bestScore !== null ? `
+                <div class="flex-between t-sm mb-4">
+                  <span class="t-muted">Best score</span>
+                  <span class="t-muted">${bestScore.toFixed(0)}%</span>
+                </div>
+                <div class="progress-bar mb-16">
+                  <div class="progress-fill ${bestScore >= 72 ? 'green' : ''}" style="width:${Math.min(bestScore,100)}%"></div>
+                </div>` : `<div class="mb-16 t-sm t-muted">No attempts yet</div>`}
+              <div class="flex gap-8">
+                <a href="${continueHref}" class="btn btn-primary btn-sm" style="flex:1"
+                   onclick="event.stopPropagation()">${lastAttempt ? 'Continue →' : 'Start →'}</a>
+                <a href="/detail/${exam.slug}" class="btn btn-ghost btn-sm btn-icon"
+                   onclick="event.stopPropagation()">${Icons.info(14)}</a>
+              </div>
+              <div class="flex gap-16 mt-12 t-xs t-muted">
+                <span>${Icons.book(12)} ${totalAttempts} test${totalAttempts !== 1 ? 's' : ''} taken</span>
+                ${bestScore !== null ? `<span>${Icons.award(12)} Best: ${bestScore.toFixed(0)}%</span>` : ''}
+              </div>
             </div>
-            <div class="flex gap-8">
-              <a href="/exam-quiz?slug=${e.slug}&pkg=pkg-${e.lastPkg}" class="btn btn-primary btn-sm" style="flex:1">Continue →</a>
-              <a href="/detail/${e.slug}" class="btn btn-ghost btn-sm btn-icon">${Icons.info(14)}</a>
-            </div>
-            <div class="flex gap-16 mt-12 t-xs t-muted">
-              <span>${Icons.book(12)} ${e.attempts} tests taken</span>
-              <span>${Icons.award(12)} Best: ${e.bestScore}%</span>
-            </div>
-          </div>
-        </div>`).join('')}
+          </div>`;
+      }).join('')}
     </div>`;
 }
 
-function renderProgress() {
-  const exams = getMyExams();
+function renderProgress(courses, completedAttempts) {
+  const totalAttempts = completedAttempts.length;
+  const passed = completedAttempts.filter(a => a.passed).length;
+  const scores = completedAttempts.map(a => a.score).filter(s => s != null);
+  const avgScore = scores.length ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+
   return `
     <h2 class="t-h2 mb-24">Your Progress</h2>
     <div class="grid-4 mb-32">
       ${[
-        {num:'3',lbl:'Enrolled',icon:'book'},
-        {num:'7',lbl:'Tests Taken',icon:'award'},
-        {num:'73%',lbl:'Avg Score',icon:'chart'},
-        {num:'2',lbl:'Tests Passed',icon:'check'},
-      ].map(s => `<div class="stat-card"><div style="color:var(--purple);margin-bottom:8px">${Icons[s.icon]?.(24)||''}</div><div class="stat-card-num">${s.num}</div><div class="stat-card-lbl">${s.lbl}</div></div>`).join('')}
+        { num: courses.length,            lbl: 'Enrolled',    icon: 'book'  },
+        { num: totalAttempts,             lbl: 'Tests Taken', icon: 'award' },
+        { num: avgScore.toFixed(0) + '%', lbl: 'Avg Score',   icon: 'chart' },
+        { num: passed,                    lbl: 'Tests Passed', icon: 'check' },
+      ].map(s => `
+        <div class="stat-card">
+          <div style="color:var(--purple);margin-bottom:8px">${Icons[s.icon]?.(24) || ''}</div>
+          <div class="stat-card-num">${s.num}</div>
+          <div class="stat-card-lbl">${s.lbl}</div>
+        </div>`).join('')}
     </div>
-    ${exams.map(e => `
-      <div class="admin-card mb-16">
-        <div class="flex-between mb-16 flex-wrap gap-12">
-          <div class="flex-center gap-12">
-            <span style="font-size:1.75rem">${e.emoji}</span>
-            <div>
-              <div style="font-weight:700">${e.title}</div>
-              <div class="t-sm t-muted">${e.attempts} tests taken · Best score: ${e.bestScore}%</div>
+    ${courses.length === 0 ? `<div class="empty-state"><p class="t-muted">Purchase a course to track progress here.</p></div>` : ''}
+    ${courses.map(({ exam, attempts, bestScore }) => {
+      const examAttempts = attempts.filter(a => a.status === 'completed');
+      const sorted = [...examAttempts].sort((a, b) => new Date(a.started_at) - new Date(b.started_at));
+      return `
+        <div class="admin-card mb-16">
+          <div class="flex-between mb-16 flex-wrap gap-12">
+            <div class="flex-center gap-12">
+              <span style="font-size:1.75rem">📋</span>
+              <div>
+                <div style="font-weight:700">${exam.title}</div>
+                <div class="t-sm t-muted">${examAttempts.length} test${examAttempts.length !== 1 ? 's' : ''} taken${bestScore !== null ? ' · Best score: ' + bestScore.toFixed(0) + '%' : ''}</div>
+              </div>
             </div>
+            ${bestScore !== null
+              ? `<span class="badge ${bestScore >= 72 ? 'badge-green' : 'badge-red'}">${bestScore >= 72 ? 'Passed' : 'In Progress'}</span>`
+              : '<span class="badge">Not started</span>'}
           </div>
-          <span class="badge ${e.bestScore>=72?'badge-green':'badge-red'}">${e.bestScore>=72?'Passed':'In Progress'}</span>
-        </div>
-        <div class="flex-between t-sm mb-6"><span class="t-muted">Course Progress</span><span style="font-weight:600">${e.progress}%</span></div>
-        <div class="progress-bar" style="height:12px"><div class="progress-fill ${e.progress>=72?'green':''}" style="width:${e.progress}%"></div></div>
-        <div class="flex gap-8 mt-16 flex-wrap">
-          ${MOCK_PACKAGES.slice(0,6).map((p,i) => {
-            const score = i < e.attempts ? [62,71,76,80,0,0][i] : null;
-            const bg = score===null ? 'var(--surface)' : score>=72 ? 'var(--green-bg)' : 'var(--red-bg)';
-            const color = score===null ? 'var(--ink-soft)' : score>=72 ? 'var(--green)' : 'var(--red)';
-            return `<div style="padding:8px 12px;border-radius:var(--r);background:${bg};color:${color};font-size:.8125rem;font-weight:600">
-              T${i+1}: ${score !== null ? score+'%' : '—'}
-            </div>`;
-          }).join('')}
-        </div>
-      </div>`).join('')}`;
+          ${bestScore !== null ? `
+            <div class="flex-between t-sm mb-6">
+              <span class="t-muted">Best Score</span>
+              <span style="font-weight:600">${bestScore.toFixed(0)}%</span>
+            </div>
+            <div class="progress-bar" style="height:12px">
+              <div class="progress-fill ${bestScore >= 72 ? 'green' : ''}" style="width:${Math.min(bestScore,100)}%"></div>
+            </div>` : ''}
+          <div class="flex gap-8 mt-16 flex-wrap">
+            ${Array.from({ length: 6 }, (_, i) => {
+              const attempt = sorted[i];
+              const score = attempt ? attempt.score : null;
+              const bg    = score === null ? 'var(--surface)' : score >= 72 ? 'var(--green-bg)' : 'var(--red-bg)';
+              const color = score === null ? 'var(--ink-soft)' : score >= 72 ? 'var(--green)' : 'var(--red)';
+              return `<div style="padding:8px 12px;border-radius:var(--r);background:${bg};color:${color};font-size:.8125rem;font-weight:600">
+                T${i + 1}: ${score !== null ? score.toFixed(0) + '%' : '—'}
+              </div>`;
+            }).join('')}
+          </div>
+        </div>`;
+    }).join('')}`;
 }
 
-const TABS = { courses: renderCourses, progress: renderProgress };
+const TABS = {
+  courses:  () => renderCourses(pageData.courses),
+  progress: () => renderProgress(pageData.courses, pageData.completedAttempts),
+};
 
 function renderTab() {
   document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
@@ -141,10 +203,11 @@ function renderTab() {
   );
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   if (!requireAuth()) return;
   Nav.render('my-learning');
   Footer.render();
+
   document.querySelectorAll('.tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -153,6 +216,15 @@ document.addEventListener('DOMContentLoaded', () => {
       renderTab();
     });
   });
+
+  try {
+    pageData = await loadData();
+  } catch (e) {
+    document.getElementById('tab-content').innerHTML =
+      `<div class="empty-state"><p class="t-muted">Failed to load your courses. Please refresh.</p></div>`;
+    return;
+  }
+
   renderTab();
 });
 </script>

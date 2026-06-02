@@ -120,15 +120,27 @@ def _package_order_from_id(package_id: str):
 
 @router.get("/{exam_id}/packages/{package_id}/questions")
 async def list_questions(exam_id: str, package_id: str, current_user=Depends(get_optional_user)):
+    from app.services.payment_service import has_access
+
     package_order = _package_order_from_id(package_id)
+
+    paid = False
+    if current_user:
+        paid = await has_access(str(current_user["_id"]), exam_id)
+
     if package_order != 1:
         if not current_user:
             raise HTTPException(401, "Not authenticated")
-        from app.services.payment_service import has_access
-        user_id = str(current_user["_id"])
-        if not await has_access(user_id, exam_id):
+        if not paid:
             raise HTTPException(403, "Purchase this exam to access questions")
-    return await exam_service.list_questions_public(exam_id, package_id)
+
+    questions = await exam_service.list_questions_public(exam_id, package_id)
+
+    # Package 1 is a free preview — cap at 5 cached questions for non-paying users
+    if package_order == 1 and not paid:
+        return await exam_service.list_preview_questions(exam_id, package_id, questions)
+
+    return questions
 
 
 @router.post("/{exam_id}/packages/{package_id}/questions", status_code=201)

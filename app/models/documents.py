@@ -216,14 +216,14 @@ def new_purchase(
     user_id: str,
     exam_id: str,
     amount_usd: float,
-    stripe_payment_id: str,
+    paypal_order_id: str,
     status: str = "completed",
 ) -> dict:
     return {
         "user_id": user_id,
         "exam_id": exam_id,
         "amount_usd": amount_usd,
-        "stripe_payment_id": stripe_payment_id,
+        "paypal_order_id": paypal_order_id,
         "status": status,               # "pending" | "completed" | "refunded"
         "purchased_at": utcnow(),
         "expires_at": None,             # None = lifetime access

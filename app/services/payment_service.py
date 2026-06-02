@@ -1,140 +1,279 @@
 """
 app/services/payment_service.py
 
-Payment processing via Stripe — Module 2 (Solutions Architect).
+Payment processing via PayPal REST API (Orders v2).
 
-Architecture decisions:
-  - Idempotency keys prevent double-charges on network retry
-  - Webhook signature verification (OWASP: don't trust client data)
-  - Purchase check cached in Redis to avoid DB hit on every exam load
-  - Exponential backoff on Stripe API calls
+Flow:
+  1. POST /payments/checkout  → create PayPal order, return approval_url
+  2. User approves on PayPal  → redirected to FRONTEND_URL/payment/success?token=ORDER_ID
+  3. POST /payments/capture   → capture the approved order, fulfill purchase
+  4. PayPal webhook           → PAYMENT.CAPTURE.COMPLETED as a fallback
+
+Architecture notes:
+  - Access token is cached in Redis (TTL = expires_in - 60s) to avoid per-request auth calls
+  - Idempotency: duplicate capture attempts are rejected via unique index on paypal_order_id
+  - Purchase access is cached in Redis (TTL 5 min) to skip DB on every exam load
 """
-import asyncio
 import hashlib
 from typing import Optional
 import structlog
+import httpx
 
-from app.core.database import get_db
-from app.core.cache import cache_get, cache_set, cache_delete, CacheKeys
 from app.core.config import settings
-from app.models.documents import new_purchase
+from app.core.cache import cache_get, cache_set, cache_delete, CacheKeys
+from app.core.database import get_db
 
 log = structlog.get_logger()
 
+_PAYPAL_BASE = {
+    "sandbox": "https://api-m.sandbox.paypal.com",
+    "live": "https://api-m.paypal.com",
+}
+
+
+def _base_url() -> str:
+    return _PAYPAL_BASE.get(settings.PAYPAL_MODE, _PAYPAL_BASE["sandbox"])
+
+
+# ── PayPal auth ───────────────────────────────────────────────────────────────
+
+async def _get_access_token() -> str:
+    """Return a cached PayPal OAuth2 access token."""
+    cache_key = "paypal:access_token"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{_base_url()}/v1/oauth2/token",
+            auth=(settings.PAYPAL_CLIENT_ID, settings.PAYPAL_CLIENT_SECRET),
+            data={"grant_type": "client_credentials"},
+            headers={"Accept": "application/json"},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+
+    token = data["access_token"]
+    ttl = max(data.get("expires_in", 3600) - 60, 60)
+    await cache_set(cache_key, token, ttl=ttl)
+    return token
+
+
+def _auth_headers(token: str) -> dict:
+    return {
+        "Authorization": f"Bearer {token}",
+        "Content-Type": "application/json",
+    }
+
+
+# ── Create order ──────────────────────────────────────────────────────────────
 
 async def create_checkout_session(user_id: str, exam_id: str) -> dict:
     """
-    Create a Stripe Checkout session.
-    Returns a redirect URL for the client.
+    Create a PayPal order for the given exam.
+    Returns approval_url (redirect the user there) and order_id.
     """
     db = get_db()
     from bson import ObjectId
 
-    # Verify exam exists
     exam = await db.exams.find_one({"_id": ObjectId(exam_id)})
+    if not exam:
+        # Many exams live only in tb_cert_metadata — fall back to that collection
+        exam = await db.tb_cert_metadata.find_one({"_id": ObjectId(exam_id)})
     if not exam:
         raise ValueError("Exam not found")
 
-    # Check if already purchased
     if await has_access(user_id, exam_id):
         raise ValueError("You already have access to this exam")
 
-    # Idempotency key: same user+exam always gets same session
-    idempotency_key = hashlib.sha256(f"{user_id}:{exam_id}".encode()).hexdigest()
+    title = exam.get("title") or exam.get("name") or "Exam"
+    price = float(exam.get("price_usd") or exam.get("price") or 29.99)
 
-    # In production, call Stripe API:
-    # import stripe
-    # stripe.api_key = settings.STRIPE_SECRET_KEY
-    # session = stripe.checkout.Session.create(
-    #     payment_method_types=["card"],
-    #     line_items=[{
-    #         "price_data": {
-    #             "currency": "usd",
-    #             "product_data": {"name": exam["title"]},
-    #             "unit_amount": int(exam["price_usd"] * 100),
-    #         },
-    #         "quantity": 1,
-    #     }],
-    #     mode="payment",
-    #     success_url=f"{settings.FRONTEND_URL}/payment/success?session_id={{CHECKOUT_SESSION_ID}}",
-    #     cancel_url=f"{settings.FRONTEND_URL}/payment/cancel",
-    #     metadata={"user_id": user_id, "exam_id": exam_id},
-    #     idempotency_key=idempotency_key,
-    # )
-    # return {"checkout_url": session.url, "session_id": session.id}
+    token = await _get_access_token()
+    success_url = f"{settings.FRONTEND_URL}/payment/success"
+    cancel_url = f"{settings.FRONTEND_URL}/payment/cancel"
 
-    # Demo response (replace with real Stripe call above)
-    mock_session_id = f"cs_demo_{idempotency_key[:16]}"
-    return {
-        "checkout_url": f"https://checkout.stripe.com/pay/{mock_session_id}",
-        "session_id": mock_session_id,
+    payload = {
+        "intent": "CAPTURE",
+        "purchase_units": [
+            {
+                "reference_id": f"{user_id}:{exam_id}",
+                "description": title,
+                "amount": {
+                    "currency_code": "USD",
+                    "value": f"{price:.2f}",
+                },
+            }
+        ],
+        "application_context": {
+            "return_url": success_url,
+            "cancel_url": cancel_url,
+            "brand_name": settings.APP_NAME,
+            "user_action": "PAY_NOW",
+        },
     }
 
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{_base_url()}/v2/checkout/orders",
+            json=payload,
+            headers=_auth_headers(token),
+        )
+        resp.raise_for_status()
+        order = resp.json()
 
-async def handle_webhook(payload: bytes, sig_header: str) -> dict:
+    approval_url = next(
+        (link["href"] for link in order.get("links", []) if link["rel"] == "approve"),
+        None,
+    )
+    if not approval_url:
+        raise RuntimeError("PayPal did not return an approval URL")
+
+    log.info("paypal.order_created", order_id=order["id"], user_id=user_id, exam_id=exam_id)
+    return {"approval_url": approval_url, "order_id": order["id"]}
+
+
+# ── Capture order ─────────────────────────────────────────────────────────────
+
+async def capture_order(user_id: str, order_id: str) -> dict:
     """
-    Process Stripe webhook events.
-    Signature verification prevents fake webhook calls (OWASP Module 2).
-    """
-    # In production:
-    # import stripe
-    # event = stripe.Webhook.construct_event(payload, sig_header, settings.STRIPE_WEBHOOK_SECRET)
-    #
-    # if event["type"] == "checkout.session.completed":
-    #     session = event["data"]["object"]
-    #     await _fulfill_purchase(
-    #         user_id=session["metadata"]["user_id"],
-    #         exam_id=session["metadata"]["exam_id"],
-    #         amount_usd=session["amount_total"] / 100,
-    #         payment_id=session["payment_intent"],
-    #     )
-    #
-    # return {"received": True}
-
-    return {"received": True}
-
-
-async def fulfill_purchase(user_id: str, exam_id: str, amount_usd: float, payment_id: str) -> dict:
-    """
-    Record a completed purchase. Idempotent — safe to call multiple times.
+    Capture an approved PayPal order and fulfill the purchase.
+    Called from the success redirect endpoint after user approves on PayPal.
     """
     db = get_db()
 
-    # Idempotency check — unique index on stripe_payment_id handles concurrent calls
-    existing = await db.purchases.find_one({"stripe_payment_id": payment_id})
+    # Idempotency guard
+    existing = await db.purchases.find_one({"paypal_order_id": order_id, "status": "completed"})
     if existing:
-        log.info("payment.duplicate_webhook", payment_id=payment_id)
+        log.info("paypal.duplicate_capture", order_id=order_id)
+        return _serialize(existing)
+
+    token = await _get_access_token()
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            f"{_base_url()}/v2/checkout/orders/{order_id}/capture",
+            headers=_auth_headers(token),
+            json={},
+        )
+        resp.raise_for_status()
+        captured = resp.json()
+
+    if captured.get("status") != "COMPLETED":
+        raise ValueError(f"PayPal capture status: {captured.get('status')}")
+
+    unit = captured["purchase_units"][0]
+    ref_id = unit.get("reference_id", "")          # "{user_id}:{exam_id}"
+    capture_info = unit["payments"]["captures"][0]
+    amount_usd = float(capture_info["amount"]["value"])
+
+    parts = ref_id.split(":", 1)
+    if len(parts) != 2 or parts[0] != user_id:
+        raise ValueError("Order does not belong to this user")
+
+    exam_id = parts[1]
+    return await fulfill_purchase(user_id, exam_id, amount_usd, order_id)
+
+
+# ── Fulfill purchase ──────────────────────────────────────────────────────────
+
+async def fulfill_purchase(user_id: str, exam_id: str, amount_usd: float, paypal_order_id: str) -> dict:
+    """Record a completed purchase. Idempotent."""
+    from app.models.documents import new_purchase
+    from bson import ObjectId
+
+    db = get_db()
+
+    existing = await db.purchases.find_one({"paypal_order_id": paypal_order_id})
+    if existing:
         return _serialize(existing)
 
     doc = new_purchase(
         user_id=user_id,
         exam_id=exam_id,
         amount_usd=amount_usd,
-        stripe_payment_id=payment_id,
+        paypal_order_id=paypal_order_id,
         status="completed",
     )
     result = await db.purchases.insert_one(doc)
     doc["_id"] = result.inserted_id
 
-    # Update user stats
-    from bson import ObjectId
     await db.users.update_one(
         {"_id": ObjectId(user_id)},
         {"$inc": {"stats.exams_purchased": 1}},
     )
 
-    # Invalidate user purchase cache
     await cache_delete(CacheKeys.USER_PURCHASES.format(user_id=user_id))
+    await cache_delete(f"access:{user_id}:{exam_id}")
 
-    log.info("payment.fulfilled", user_id=user_id, exam_id=exam_id, amount=amount_usd)
+    log.info("paypal.purchase_fulfilled", user_id=user_id, exam_id=exam_id, amount=amount_usd)
     return _serialize(doc)
 
 
+# ── Webhook ───────────────────────────────────────────────────────────────────
+
+async def handle_webhook(payload: bytes, headers: dict) -> dict:
+    """
+    Process PayPal webhook events (PAYMENT.CAPTURE.COMPLETED).
+    Verifies the webhook signature against PAYPAL_WEBHOOK_ID before trusting the payload.
+
+    Verification docs:
+      https://developer.paypal.com/api/rest/webhooks/rest/#link-eventtypesbysignature
+    """
+    import json
+
+    if settings.PAYPAL_WEBHOOK_ID:
+        token = await _get_access_token()
+        verify_payload = {
+            "auth_algo": headers.get("paypal-auth-algo", ""),
+            "cert_url": headers.get("paypal-cert-url", ""),
+            "transmission_id": headers.get("paypal-transmission-id", ""),
+            "transmission_sig": headers.get("paypal-transmission-sig", ""),
+            "transmission_time": headers.get("paypal-transmission-time", ""),
+            "webhook_id": settings.PAYPAL_WEBHOOK_ID,
+            "webhook_event": json.loads(payload),
+        }
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(
+                f"{_base_url()}/v1/notifications/verify-webhook-signature",
+                json=verify_payload,
+                headers=_auth_headers(token),
+            )
+            result = resp.json()
+        if result.get("verification_status") != "SUCCESS":
+            log.warning("paypal.webhook_verification_failed", status=result.get("verification_status"))
+            raise ValueError("Webhook signature verification failed")
+
+    event = json.loads(payload)
+    event_type = event.get("event_type", "")
+
+    if event_type == "PAYMENT.CAPTURE.COMPLETED":
+        resource = event["resource"]
+        order_id = resource.get("supplementary_data", {}).get("related_ids", {}).get("order_id")
+        amount_usd = float(resource["amount"]["value"])
+
+        # Resolve user/exam from purchase_units reference_id stored at order creation
+        if order_id:
+            token = await _get_access_token()
+            async with httpx.AsyncClient() as client:
+                resp = await client.get(
+                    f"{_base_url()}/v2/checkout/orders/{order_id}",
+                    headers=_auth_headers(token),
+                )
+                order_data = resp.json()
+            ref_id = order_data["purchase_units"][0].get("reference_id", "")
+            parts = ref_id.split(":", 1)
+            if len(parts) == 2:
+                user_id, exam_id = parts
+                await fulfill_purchase(user_id, exam_id, amount_usd, order_id)
+                log.info("paypal.webhook_fulfilled", order_id=order_id)
+
+    return {"received": True}
+
+
+# ── Access check ──────────────────────────────────────────────────────────────
+
 async def has_access(user_id: str, exam_id: str) -> bool:
-    """
-    Check if a user has purchased an exam.
-    Cached to avoid DB hit on every API call.
-    """
     cache_key = f"access:{user_id}:{exam_id}"
     cached = await cache_get(cache_key)
     if cached is not None:
@@ -162,22 +301,6 @@ async def list_user_purchases(user_id: str) -> list[dict]:
     purchases = [_serialize(p) async for p in cursor]
     await cache_set(cache_key, purchases, ttl=120)
     return purchases
-
-
-async def _retry_with_backoff(coro, retries=3, base_delay=1.0):
-    """
-    Exponential backoff for external API calls (Module 2: Solutions Architect).
-    Prevents overwhelming a recovering service.
-    """
-    for attempt in range(retries):
-        try:
-            return await coro
-        except Exception as e:
-            if attempt == retries - 1:
-                raise
-            delay = base_delay * (2 ** attempt)
-            log.warning("retry.backoff", attempt=attempt + 1, delay=delay, error=str(e))
-            await asyncio.sleep(delay)
 
 
 def _serialize(doc: dict) -> dict:
