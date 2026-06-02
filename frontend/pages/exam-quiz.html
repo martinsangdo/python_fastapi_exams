@@ -42,6 +42,7 @@ let revealed   = {};     // { qid: true }
 let timeLeft   = 0;
 let timerInterval = null;
 let finished   = false;
+let isGuestPractice = false;
 
 function normalizeQuestionType(type) {
   if (!type) return 'single';
@@ -83,6 +84,54 @@ function getOptionState(q, key) {
   if (q.correct.includes(key)) return 'correct';
   if (answers[q.id]?.includes(key)) return 'wrong';
   return '';
+}
+
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function guestSampleCacheKey(examId, packageId) {
+  return `guest-sample-quiz:${examId}:${packageId}`;
+}
+
+function loadGuestSampleQuestions(examId, packageId) {
+  const raw = localStorage.getItem(guestSampleCacheKey(examId, packageId));
+  if (!raw) return null;
+  try {
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : null;
+  } catch (e) {
+    localStorage.removeItem(guestSampleCacheKey(examId, packageId));
+    return null;
+  }
+}
+
+function saveGuestSampleQuestions(examId, packageId, qs) {
+  try {
+    localStorage.setItem(guestSampleCacheKey(examId, packageId), JSON.stringify(qs));
+  } catch (e) {
+    console.warn('Unable to cache guest sample questions', e);
+  }
+}
+
+function shuffleQuestionOptions(q) {
+  const originalOptions = q.options || [];
+  // Determine correct option texts from original keys
+  const correctTexts = (q.correct || []).map(k => {
+    const o = originalOptions.find(x => x.key === k);
+    return o ? o.text : null;
+  }).filter(Boolean);
+
+  const shuffled = shuffleArray(originalOptions);
+  const letters = ['A','B','C','D','E'];
+  const newOptions = shuffled.map((o, i) => ({ key: letters[i] || String.fromCharCode(65 + i), text: o.text }));
+  const newCorrect = newOptions.filter(o => correctTexts.includes(o.text)).map(o => o.key);
+  return { ...q, options: newOptions, correct: newCorrect };
 }
 
 // ── Actions ────────────────────────────────────────────────────────────────
@@ -218,7 +267,7 @@ function renderResult() {
   document.getElementById('quiz-header').style.display = 'none';
   const { correct, total, pct } = getScore();
   const pass = pct >= pkg.pass_score_pct;
-  const timeUsed = fmtTime(pkg.time_limit_minutes * 60 - timeLeft);
+  const timeUsed = isGuestPractice ? 'N/A' : fmtTime(pkg.time_limit_minutes * 60 - timeLeft);
 
   document.getElementById('quiz-root').innerHTML = `
     <div style="padding:48px 0;background:var(--surface);min-height:100vh">
@@ -272,12 +321,16 @@ function renderResult() {
 
   document.getElementById('retake-btn')?.addEventListener('click', () => {
     answers = {}; revealed = {}; currentIdx = 0; finished = false;
-    showHint = false; timeLeft = pkg.time_limit_minutes*60;
+    showHint = false;
+    timeLeft = pkg.time_limit_minutes*60;
     document.getElementById('quiz-header').style.display = 'flex';
     document.getElementById('timer').classList.remove('warning');
     document.getElementById('timer-display').textContent = fmtTime(timeLeft);
+    if (isGuestPractice) {
+      document.getElementById('timer').style.display = 'none';
+    }
     renderQuestion();
-    startTimer();
+    if (!isGuestPractice) startTimer();
   });
 }
 
@@ -307,8 +360,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   document.getElementById('back-link').href = `/detail/${slug}`;
-  document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title}`;
   timeLeft = (pkg.time_limit_minutes || 90) * 60;
+  isGuestPractice = !State.user && pkg.order === 1;
 
   if (questions.length === 0) {
     document.getElementById('quiz-root').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">${questionsError ? 'Unable to load questions' : 'No questions available'}</h2><p class="t-muted mt-8">${questionsError || 'This practice test does not currently have questions.'}</p></div>`;
@@ -322,8 +375,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     explanation: typeof q.explanation === 'string' ? q.explanation : '',
   }));
 
+  if (isGuestPractice) {
+    const cached = loadGuestSampleQuestions(exam.id, pkg.id);
+    if (cached && cached.length === Math.min(5, questions.length)) {
+      questions = cached;
+    } else {
+      questions = shuffleArray(questions).slice(0, 5);
+      saveGuestSampleQuestions(exam.id, pkg.id, questions);
+    }
+    document.getElementById('timer').style.display = 'none';
+    document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title} (Sample Practice)`;
+  } else {
+    document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title}`;
+  }
+
+  // Shuffle option order for guest sample questions so cached items appear in different order
+  if (isGuestPractice) {
+    questions = questions.map(q => shuffleQuestionOptions(q));
+  }
+
   renderQuestion();
-  startTimer();
+  if (!isGuestPractice) startTimer();
 });
 </script>
 </body>

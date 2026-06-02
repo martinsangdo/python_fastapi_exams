@@ -367,9 +367,15 @@ async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
             elif isinstance(answer, list):
                 correct = [str(a) for a in answer]
 
-            explanation = q.get("explanation", "")
-            if isinstance(explanation, dict):
-                explanation = explanation.get(answer, "") or " ".join([f"{k}: {v}" for k, v in explanation.items()])
+            explanation_data = q.get("explanation", "")
+            explanation = explanation_data
+            if isinstance(explanation_data, dict):
+                explanation_key = answer
+                if isinstance(answer, list):
+                    explanation_key = ",".join(str(a) for a in answer)
+                explanation = explanation_data.get(explanation_key, "")
+                if not explanation:
+                    explanation = " ".join([f"{k}: {v}" for k, v in explanation_data.items()])
 
             questions.append({
                 "id": q.get("uuid") or str(q.get("_id")),
