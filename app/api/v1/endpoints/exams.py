@@ -136,7 +136,7 @@ async def list_questions(exam_id: str, package_id: str, current_user=Depends(get
 
     questions = await exam_service.list_questions_public(exam_id, package_id)
 
-    # Package 1 is a free preview — cap at 5 cached questions for non-paying users
+    # Package 1 is a free preview — cap at 10 cached questions for non-paying users
     if package_order == 1 and not paid:
         return await exam_service.list_preview_questions(exam_id, package_id, questions)
 

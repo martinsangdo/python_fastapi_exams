@@ -410,7 +410,7 @@ async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
     return questions
 
 
-PREVIEW_QUESTION_COUNT = 5
+PREVIEW_QUESTION_COUNT = 10
 
 async def list_preview_questions(exam_id: str, package_id: str, all_questions: list) -> list:
     """
