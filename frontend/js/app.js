@@ -56,7 +56,7 @@ const State = {
 
 /* ── API Client ── */
 const API = {
-  async request(method, path, body = null, auth = true) {
+  async request(method, path, body = null, auth = true, _retried = false) {
     const headers = { 'Content-Type': 'application/json' };
     if (auth && State.getToken()) headers['Authorization'] = `Bearer ${State.getToken()}`;
     try {
@@ -64,6 +64,13 @@ const API = {
         method, headers,
         body: body ? JSON.stringify(body) : undefined,
       });
+      if (res.status === 401 && auth && !_retried) {
+        const refreshed = await API._tryRefresh();
+        if (refreshed) return API.request(method, path, body, auth, true);
+        State.logout();
+        window.location.href = '/login?redirect=' + encodeURIComponent(window.location.pathname);
+        return;
+      }
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: `HTTP ${res.status}` }));
         throw new Error(err.detail || `HTTP ${res.status}`);
@@ -76,6 +83,28 @@ const API = {
         return API._mockFallback(method, path, body);
       }
       throw e;
+    }
+  },
+
+  async _tryRefresh() {
+    const refreshToken = localStorage.getItem('ep_refresh');
+    if (!refreshToken) return false;
+    try {
+      const res = await fetch(`${API_BASE}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (data.access_token) {
+        State.setToken(data.access_token, data.refresh_token || refreshToken);
+        scheduleTokenRefresh();
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
     }
   },
 
@@ -328,9 +357,31 @@ const Footer = {
   },
 };
 
+/* ── Proactive token refresh ── */
+let _refreshTimer = null;
+
+function scheduleTokenRefresh() {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+  const token = State.getToken();
+  if (!token || !localStorage.getItem('ep_refresh')) return;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    const expiresInMs = payload.exp * 1000 - Date.now();
+    // Refresh 5 minutes before expiry; skip if already expired or expiry unknown
+    const delay = expiresInMs - 5 * 60 * 1000;
+    if (delay <= 0) return;
+    _refreshTimer = setTimeout(async () => {
+      const ok = await API._tryRefresh();
+      if (ok) scheduleTokenRefresh();
+      else { State.logout(); window.location.href = '/login'; }
+    }, delay);
+  } catch { /* non-JWT token or parse error — ignore */ }
+}
+
 /* ── Init ── */
 document.addEventListener('DOMContentLoaded', () => {
   State.init();
   Toast.init();
+  scheduleTokenRefresh();
   // Nav and Footer rendered by each page after calling Nav.render() / Footer.render()
 });

@@ -139,6 +139,8 @@ async function loadCertifications() {
       const parsed = JSON.parse(cached);
       if (Date.now() - parsed.timestamp < EXPIRY) {
         MOCK_EXAMS = parsed.data.map(enrichExamLogo);
+        document.getElementById('page-loader').style.display = 'none';
+        document.getElementById('exam-grid').style.display = '';
         return; // Use cache and skip fetch
       }
     } catch (e) { localStorage.removeItem(CACHE_KEY); }
