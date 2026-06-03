@@ -11,8 +11,9 @@ router = APIRouter(prefix="/attempts", tags=["Attempts"])
 
 @router.post("", status_code=201)
 async def start_attempt(data: StartAttemptRequest, current_user=Depends(get_current_user)):
+    print(f"[DEBUG] start_attempt: package_id={data.package_id!r} exam_id={data.exam_id!r}")
     try:
-        return await attempt_service.start_attempt(str(current_user["_id"]), data.package_id)
+        return await attempt_service.start_attempt(str(current_user["_id"]), data.package_id, data.exam_id)
     except PermissionError as e:
         raise HTTPException(403, str(e))
     except ValueError as e:
@@ -38,9 +39,14 @@ async def submit_answer(
 
 
 @router.post("/{attempt_id}/finish")
-async def finish_attempt(attempt_id: str, current_user=Depends(get_current_user)):
+async def finish_attempt(
+    attempt_id: str,
+    correct_count: int = None,
+    total_questions: int = None,
+    current_user=Depends(get_current_user),
+):
     try:
-        return await attempt_service.finish_attempt(attempt_id, str(current_user["_id"]))
+        return await attempt_service.finish_attempt(attempt_id, str(current_user["_id"]), correct_count, total_questions)
     except ValueError as e:
         raise HTTPException(400, str(e))
 

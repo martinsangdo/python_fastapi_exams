@@ -138,9 +138,9 @@ const API = {
     analytics:   (eid)    => API.request('GET', `/exams/${eid}/analytics`),
   },
   attempts: {
-    start:  (pkgId)  => API.request('POST', '/attempts', { package_id: pkgId }),
+    start:  (pkgId, examId='')  => API.request('POST', '/attempts', { package_id: pkgId, exam_id: examId }),
     answer: (id, d)  => API.request('POST', `/attempts/${id}/answers`, d),
-    finish: (id)     => API.request('POST', `/attempts/${id}/finish`),
+    finish: (id, correct, total) => API.request('POST', `/attempts/${id}/finish${correct != null ? `?correct_count=${correct}&total_questions=${total}` : ''}`),
     list:   (page=1) => API.request('GET',  `/attempts?page=${page}`),
   },
   payments: {

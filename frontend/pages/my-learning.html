@@ -66,7 +66,8 @@ async function loadData() {
       id: p.exam_id,
       title: p.exam_title,
       slug: p.exam_slug,
-      thumbnail: p.exam_thumbnail,
+      thumbnail_url: p.exam_thumbnail,
+      category: p.exam_category || '',
     } : null;
     const examAttempts = attemptsByExam[p.exam_id] || [];
     const scores = examAttempts.map(a => a.score).filter(s => s != null);
@@ -103,7 +104,7 @@ function renderCourses(courses) {
           <div class="card learning-card" data-slug="${exam.slug}">
             <div class="learning-card-thumb" style="background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:2rem;min-height:100px">
               ${exam.thumbnail_url
-                ? `<img src="${exam.thumbnail_url}" style="width:100%;height:100%;object-fit:cover" alt="" />`
+                ? `<img src="${exam.thumbnail_url}" style="max-width:100%;max-height:100%;object-fit:contain" alt="" onerror="this.replaceWith(document.createTextNode('📋'))" />`
                 : '📋'}
             </div>
             <div class="learning-card-body">
@@ -162,7 +163,9 @@ function renderProgress(courses, completedAttempts) {
         <div class="admin-card mb-16">
           <div class="flex-between mb-16 flex-wrap gap-12">
             <div class="flex-center gap-12">
-              <span style="font-size:1.75rem">📋</span>
+              ${exam.thumbnail_url
+                ? `<img src="${exam.thumbnail_url}" style="width:40px;height:40px;object-fit:contain" alt="" onerror="this.replaceWith(document.createTextNode('📋'))" />`
+                : `<span style="font-size:1.75rem">📋</span>`}
               <div>
                 <div style="font-weight:700">${exam.title}</div>
                 <div class="t-sm t-muted">${examAttempts.length} test${examAttempts.length !== 1 ? 's' : ''} taken${bestScore !== null ? ' · Best score: ' + bestScore.toFixed(0) + '%' : ''}</div>
@@ -182,12 +185,18 @@ function renderProgress(courses, completedAttempts) {
             </div>` : ''}
           <div class="flex gap-8 mt-16 flex-wrap">
             ${Array.from({ length: 6 }, (_, i) => {
-              const attempt = sorted[i];
-              const score = attempt ? attempt.score : null;
+              const pkgNum = i + 1;
+              // Find best attempt for this specific package number
+              const pkgAttempts = examAttempts.filter(a => {
+                const pid = a.package_id || '';
+                return pid === `pkg-${pkgNum}` || pid.endsWith(`-${pkgNum}`);
+              });
+              const best = pkgAttempts.reduce((b, a) => (a.score > (b?.score ?? -1) ? a : b), null);
+              const score = best ? best.score : null;
               const bg    = score === null ? 'var(--surface)' : score >= 72 ? 'var(--green-bg)' : 'var(--red-bg)';
               const color = score === null ? 'var(--ink-soft)' : score >= 72 ? 'var(--green)' : 'var(--red)';
               return `<div style="padding:8px 12px;border-radius:var(--r);background:${bg};color:${color};font-size:.8125rem;font-weight:600">
-                T${i + 1}: ${score !== null ? score.toFixed(0) + '%' : '—'}
+                T${pkgNum}: ${score !== null ? score.toFixed(0) + '%' : '—'}
               </div>`;
             }).join('')}
           </div>

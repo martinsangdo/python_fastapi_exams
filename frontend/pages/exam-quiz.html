@@ -43,6 +43,7 @@ let timeLeft   = 0;
 let timerInterval = null;
 let finished   = false;
 let isGuestPractice = false;
+let attemptId  = null;   // backend attempt ID
 
 function normalizeQuestionType(type) {
   if (!type) return 'single';
@@ -147,16 +148,29 @@ function selectOption(key) {
   renderQuestion();
 }
 
-function checkAnswer() {
+async function checkAnswer() {
   const q = questions[currentIdx];
   if (!answers[q.id]?.length) { Toast.show('Please select an answer first', 'error'); return; }
   revealed[q.id] = true;
   renderQuestion();
+  if (attemptId && State.user) {
+    try {
+      await API.attempts.answer(attemptId, {
+        question_id: q.id,
+        selected_keys: answers[q.id],
+        time_seconds: 0,
+      });
+    } catch {}
+  }
 }
 
-function handleFinish() {
+async function handleFinish() {
   clearInterval(timerInterval);
   finished = true;
+  if (attemptId && State.user) {
+    const { correct, total } = getScore();
+    try { await API.attempts.finish(attemptId, correct, total); } catch (e) { console.warn('finish attempt failed:', e); }
+  }
   renderResult();
 }
 
@@ -200,7 +214,20 @@ function renderQuestion() {
         ${revealed[q.id] ? `
           <div class="explanation-box">
             <div class="explanation-title">${Icons.info(16)} Explanation</div>
-            <p class="t-body">${q.explanation}</p>
+            ${Object.keys(q.explanations).length
+              ? q.options.map(opt => {
+                  const text = q.explanations[opt.key];
+                  if (!text) return '';
+                  const isCorrect = q.correct.includes(opt.key);
+                  return `<div style="margin-bottom:10px">
+                    <span style="font-weight:600;color:${isCorrect ? 'var(--green)' : 'var(--text-muted)'}">
+                      ${opt.key}. ${isCorrect ? '✓' : ''}
+                    </span>
+                    <span class="t-body">${text}</span>
+                  </div>`;
+                }).join('')
+              : `<p class="t-body">${q.explanation}</p>`
+            }
           </div>` : ''}
 
         <div class="quiz-actions">
@@ -209,9 +236,10 @@ function renderQuestion() {
             <button class="btn btn-ghost" id="prev-btn" ${currentIdx===0?'disabled':''}>← Previous</button>
             ${!revealed[q.id]
               ? `<button class="btn btn-primary" id="check-btn">Check Answer</button>`
-              : currentIdx < questions.length-1
-                ? `<button class="btn btn-primary" id="next-btn">Next Question →</button>`
-                : `<button class="btn btn-primary btn-lg" id="finish-btn">🎯 Finish Test</button>`}
+              : ''}
+            ${currentIdx < questions.length-1
+              ? `<button class="btn btn-primary" id="next-btn">Next →</button>`
+              : `<button class="btn btn-primary btn-lg" id="finish-btn">🎯 Finish Test</button>`}
           </div>
         </div>
       </div>
@@ -312,7 +340,15 @@ function renderResult() {
                 </div>`;
               }).join('')}
               <div style="margin-top:12px;padding:12px;background:var(--surface);border-radius:var(--r);font-size:.875rem;border-left:3px solid var(--purple)">
-                <strong>Explanation:</strong> ${q.explanation}
+                <strong>Explanation:</strong>
+                ${Object.keys(q.explanations || {}).length
+                  ? q.options.map(o => {
+                      const text = q.explanations[o.key];
+                      if (!text) return '';
+                      const isCor = q.correct.includes(o.key);
+                      return `<div style="margin-top:8px"><span style="font-weight:600;color:${isCor ? 'var(--green)' : 'inherit'}">${o.key}${isCor ? ' ✓' : ''}.</span> ${text}</div>`;
+                    }).join('')
+                  : q.explanation}
               </div>
             </div>`;
         }).join('')}
@@ -335,6 +371,7 @@ function renderResult() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  State.init();
   Toast.init();
 
   try {
@@ -373,6 +410,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     type: normalizeQuestionType(q.type),
     correct: Array.isArray(q.correct) ? q.correct : q.correct ? [q.correct] : [],
     explanation: typeof q.explanation === 'string' ? q.explanation : '',
+    explanations: (q.explanations && typeof q.explanations === 'object') ? q.explanations : {},
   }));
 
   if (isGuestPractice) {
@@ -392,6 +430,17 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Shuffle option order for guest sample questions so cached items appear in different order
   if (isGuestPractice) {
     questions = questions.map(q => shuffleQuestionOptions(q));
+  }
+
+  if (State.user && !isGuestPractice) {
+    console.log('[attempt] user:', State.user, 'pkg.id:', pkg.id, 'exam.id:', exam.id, 'isGuest:', isGuestPractice);
+    try {
+      const attempt = await API.attempts.start(pkg.id, exam.id);
+      attemptId = attempt.id || attempt._id || attempt.attempt_id;
+      console.log('[attempt] started', attemptId);
+    } catch (e) {
+      console.error('[attempt] start failed:', e.message, e);
+    }
   }
 
   renderQuestion();

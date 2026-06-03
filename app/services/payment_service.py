@@ -314,13 +314,16 @@ async def list_user_purchases(user_id: str) -> list[dict]:
     for p in purchases:
         try:
             exam_oid = ObjectId(p["exam_id"])
-            exam = await db.exams.find_one({"_id": exam_oid}, {"title": 1, "slug": 1, "thumbnail": 1})
+            exam = await db.exams.find_one({"_id": exam_oid}, {"title": 1, "slug": 1, "thumbnail_url": 1, "category": 1, "symbol": 1})
             if not exam:
-                exam = await db.tb_cert_metadata.find_one({"_id": exam_oid}, {"name": 1, "slug": 1, "logo": 1})
+                exam = await db.tb_cert_metadata.find_one({"_id": exam_oid}, {"name": 1, "slug": 1, "logo_url": 1, "category": 1, "symbol": 1})
             if exam:
+                symbol = (exam.get("symbol") or "").upper()
+                logo = exam.get("thumbnail_url") or exam.get("logo_url") or (f"/logos/{symbol}.png" if symbol else "")
                 p["exam_title"] = exam.get("title") or exam.get("name")
                 p["exam_slug"] = exam.get("slug")
-                p["exam_thumbnail"] = exam.get("thumbnail") or exam.get("logo")
+                p["exam_thumbnail"] = logo
+                p["exam_category"] = exam.get("category")
         except Exception:
             pass
 

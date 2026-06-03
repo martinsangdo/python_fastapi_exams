@@ -368,22 +368,25 @@ async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
                 correct = [str(a) for a in answer]
 
             explanation_data = q.get("explanation", "")
-            explanation = explanation_data
             if isinstance(explanation_data, dict):
-                explanation_key = answer
-                if isinstance(answer, list):
-                    explanation_key = ",".join(str(a) for a in answer)
-                explanation = explanation_data.get(explanation_key, "")
-                if not explanation:
-                    explanation = " ".join([f"{k}: {v}" for k, v in explanation_data.items()])
+                explanations = {k: v for k, v in explanation_data.items()}
+                explanation_key = answer if isinstance(answer, str) else (",".join(str(a) for a in answer) if isinstance(answer, list) else "")
+                explanation = explanation_data.get(explanation_key, "") or " ".join([f"{k}: {v}" for k, v in explanation_data.items()])
+            else:
+                explanation = explanation_data or ""
+                explanations = {}
+
+            # Derive type from correct answer count — DB type field is unreliable
+            q_type = "single" if len(correct) <= 1 else "multiple"
 
             questions.append({
                 "id": q.get("uuid") or str(q.get("_id")),
                 "text": q.get("question") or q.get("text", ""),
-                "type": q.get("type", "single"),
+                "type": q_type,
                 "options": public_options,
                 "correct": correct,
                 "explanation": explanation,
+                "explanations": explanations,
                 "tags": q.get("tags", []),
                 "difficulty": q.get("difficulty", "medium"),
             })
@@ -397,7 +400,8 @@ async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
                 "type": q["type"],
                 "options": public_options,
                 "correct": q.get("correct", []),
-                "explanation": q.get("explanation", ""),
+                "explanation": q.get("explanation", "") if isinstance(q.get("explanation"), str) else "",
+                "explanations": q.get("explanation", {}) if isinstance(q.get("explanation"), dict) else {},
                 "tags": q.get("tags", []),
                 "difficulty": q.get("difficulty", "medium"),
             })

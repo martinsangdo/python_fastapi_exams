@@ -281,6 +281,7 @@ class QuestionAdmin(BaseModel):
 
 class StartAttemptRequest(BaseModel):
     package_id: str
+    exam_id: str = ""
 
 
 class SubmitAnswerRequest(BaseModel):
