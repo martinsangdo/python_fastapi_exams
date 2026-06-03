@@ -45,14 +45,12 @@ function requireAuth() {
 }
 
 async function loadData() {
-  const [purchases, attemptsRes, examsRes] = await Promise.all([
+  const [purchases, attemptsRes] = await Promise.all([
     API.payments.myPurchases(),
     API.attempts.list(),
-    API.exams.list({ page_size: 50 }),
   ]);
 
-  const examById = {};
-  (examsRes?.items || []).forEach(e => { examById[e.id] = e; });
+  const purchaseList = purchases || [];
 
   const completedAttempts = (attemptsRes?.items || []).filter(a => a.status === 'completed');
 
@@ -62,8 +60,14 @@ async function loadData() {
     attemptsByExam[a.exam_id].push(a);
   });
 
-  const courses = (purchases || []).map(p => {
-    const exam = examById[p.exam_id];
+  const courses = purchaseList.map(p => {
+    // Use enriched exam info returned directly from the purchases endpoint
+    const exam = p.exam_title ? {
+      id: p.exam_id,
+      title: p.exam_title,
+      slug: p.exam_slug,
+      thumbnail: p.exam_thumbnail,
+    } : null;
     const examAttempts = attemptsByExam[p.exam_id] || [];
     const scores = examAttempts.map(a => a.score).filter(s => s != null);
     const bestScore = scores.length ? Math.max(...scores) : null;

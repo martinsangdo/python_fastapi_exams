@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Payment Successful — ExamPrep</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+<div id="nav-root"></div>
+
+<div style="background:var(--navy);padding:40px 0">
+  <div class="container">
+    <h1 class="t-h1" style="color:#fff;margin-bottom:8px">Payment Successful</h1>
+    <p style="color:rgba(255,255,255,.7)">Your purchase is being confirmed</p>
+  </div>
+</div>
+
+<div class="container" style="padding:60px 0;text-align:center">
+  <div id="status-icon" style="font-size:64px;margin-bottom:24px">⏳</div>
+  <h2 id="status-title" class="t-h2" style="margin-bottom:12px">Confirming your payment…</h2>
+  <p id="status-msg" style="color:var(--gray);margin-bottom:32px">Please wait while we capture your PayPal order.</p>
+  <a id="cta-btn" href="/my-learning" class="btn btn-primary" style="display:none">Go to My Learning</a>
+</div>
+
+<script>
+(async () => {
+  const params = new URLSearchParams(location.search);
+  const token = params.get("token"); // PayPal order ID
+
+  if (!token) {
+    document.getElementById("status-icon").textContent = "❌";
+    document.getElementById("status-title").textContent = "Missing order information";
+    document.getElementById("status-msg").textContent = "No payment token found in the URL.";
+    return;
+  }
+
+  try {
+    const res = await fetch(`/api/v1/payments/capture?order_id=${token}`, {
+      method: "POST",
+      headers: { "Authorization": `Bearer ${localStorage.getItem("ep_token")}` }
+    });
+    const data = await res.json();
+
+    if (res.ok) {
+      document.getElementById("status-icon").textContent = "✅";
+      document.getElementById("status-title").textContent = "Payment confirmed!";
+      document.getElementById("status-msg").textContent = "You now have full access to your exam.";
+      document.getElementById("cta-btn").style.display = "inline-block";
+    } else {
+      throw new Error(data.detail || "Capture failed");
+    }
+  } catch (err) {
+    document.getElementById("status-icon").textContent = "❌";
+    document.getElementById("status-title").textContent = "Payment capture failed";
+    document.getElementById("status-msg").textContent = err.message;
+  }
+})();
+</script>
+
+<script src="/js/nav.js"></script>
+</body>
+</html>

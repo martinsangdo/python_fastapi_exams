@@ -142,7 +142,11 @@
 </head>
 <body>
   <div id="nav-root"></div>
-  <main id="page-main"></main>
+  <main id="page-main">
+    <div id="page-loader" style="display:flex;justify-content:center;align-items:center;min-height:60vh">
+      <div class="loading-spinner"></div>
+    </div>
+  </main>
   <div id="footer-root"></div>
 
   <script src="/js/app.js"></script>
@@ -383,21 +387,28 @@
 
     async function doEnroll() {
       if (!State.user) { location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; }
+
+      const btns = [document.getElementById('hero-enroll'), document.getElementById('cta-enroll'), document.getElementById('unlock-btn')].filter(Boolean);
+      btns.forEach(b => { b.disabled = true; b.textContent = 'Redirecting to PayPal…'; });
+
       try {
         const res = await API.payments.checkout(exam.id);
         if (res.approval_url) {
           location.href = res.approval_url;
         } else {
           Toast.show('Could not start checkout. Please try again.', 'error');
+          btns.forEach(b => { b.disabled = false; b.textContent = b.id === 'unlock-btn' ? 'Unlock with Full Access' : 'Enroll Now'; });
         }
       } catch (e) {
         Toast.show(e.message || 'Checkout failed', 'error');
+        btns.forEach(b => { b.disabled = false; b.textContent = b.id === 'unlock-btn' ? 'Unlock with Full Access' : 'Enroll Now'; });
       }
     }
 
     function bindAll(purchased) {
       document.getElementById('hero-enroll')?.addEventListener('click', doEnroll);
       document.getElementById('cta-enroll')?.addEventListener('click', doEnroll);
+      document.getElementById('unlock-btn')?.addEventListener('click', doEnroll);
 
       /* pkg toggle */
       document.querySelectorAll('[data-toggle]').forEach(el => {

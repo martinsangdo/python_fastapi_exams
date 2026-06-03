@@ -113,9 +113,11 @@ def create_app() -> FastAPI:
     @app.get("/terms", include_in_schema=False)
     @app.get("/about-us", include_in_schema=False)
     @app.get("/contact", include_in_schema=False)
+    @app.get("/payment/success", include_in_schema=False)
+    @app.get("/payment/cancel", include_in_schema=False)
     async def serve_pages(request: Request):
         page = request.url.path.strip("/")
-        special = {"quiz": "exam-quiz.html", "forgot-password": "forgot-password.html", "reset-password": "reset-password.html"}
+        special = {"quiz": "exam-quiz.html", "forgot-password": "forgot-password.html", "reset-password": "reset-password.html", "payment/success": "payment-success.html", "payment/cancel": "payment-cancel.html"}
         filename = special.get(page, f"{page}.html")
         frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
         return FileResponse(os.path.join(frontend_path, "pages", filename))

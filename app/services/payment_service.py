@@ -18,6 +18,7 @@ import hashlib
 from typing import Optional
 import structlog
 import httpx
+from bson import ObjectId
 
 from app.core.config import settings
 from app.core.cache import cache_get, cache_set, cache_delete, CacheKeys
@@ -75,7 +76,6 @@ async def create_checkout_session(user_id: str, exam_id: str) -> dict:
     Returns approval_url (redirect the user there) and order_id.
     """
     db = get_db()
-    from bson import ObjectId
 
     exam = await db.exams.find_one({"_id": ObjectId(exam_id)})
     if not exam:
@@ -100,9 +100,20 @@ async def create_checkout_session(user_id: str, exam_id: str) -> dict:
             {
                 "reference_id": f"{user_id}:{exam_id}",
                 "description": title,
+                "items": [
+                    {
+                        "name": title,
+                        "quantity": "1",
+                        "unit_amount": {"currency_code": "USD", "value": f"{price:.2f}"},
+                        "category": "DIGITAL_GOODS",
+                    }
+                ],
                 "amount": {
                     "currency_code": "USD",
                     "value": f"{price:.2f}",
+                    "breakdown": {
+                        "item_total": {"currency_code": "USD", "value": f"{price:.2f}"}
+                    },
                 },
             }
         ],
@@ -180,7 +191,6 @@ async def capture_order(user_id: str, order_id: str) -> dict:
 async def fulfill_purchase(user_id: str, exam_id: str, amount_usd: float, paypal_order_id: str) -> dict:
     """Record a completed purchase. Idempotent."""
     from app.models.documents import new_purchase
-    from bson import ObjectId
 
     db = get_db()
 
@@ -299,6 +309,21 @@ async def list_user_purchases(user_id: str) -> list[dict]:
     db = get_db()
     cursor = db.purchases.find({"user_id": user_id, "status": "completed"}).sort("purchased_at", -1)
     purchases = [_serialize(p) async for p in cursor]
+
+    # Enrich each purchase with basic exam info so the frontend doesn't need extra lookups
+    for p in purchases:
+        try:
+            exam_oid = ObjectId(p["exam_id"])
+            exam = await db.exams.find_one({"_id": exam_oid}, {"title": 1, "slug": 1, "thumbnail": 1})
+            if not exam:
+                exam = await db.tb_cert_metadata.find_one({"_id": exam_oid}, {"name": 1, "slug": 1, "logo": 1})
+            if exam:
+                p["exam_title"] = exam.get("title") or exam.get("name")
+                p["exam_slug"] = exam.get("slug")
+                p["exam_thumbnail"] = exam.get("thumbnail") or exam.get("logo")
+        except Exception:
+            pass
+
     await cache_set(cache_key, purchases, ttl=120)
     return purchases
 
