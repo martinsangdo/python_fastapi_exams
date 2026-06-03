@@ -121,7 +121,9 @@ const API = {
     login:    (d) => API.request('POST', '/auth/login', d, false),
     register: (d) => API.request('POST', '/auth/register', d, false),
     me:       ()  => API.request('GET',  '/auth/me'),
-    logout:   (rt) => API.request('POST', '/auth/logout', { refresh_token: rt }),
+    logout:        (rt) => API.request('POST', '/auth/logout', { refresh_token: rt }),
+    forgotPassword:(d)  => API.request('POST', '/auth/forgot-password', d, false),
+    resetPassword: (d)  => API.request('POST', '/auth/reset-password', d, false),
   },
   exams: {
     list:        (p = {}) => API.request('GET', '/exams?' + new URLSearchParams(p), null, false),

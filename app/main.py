@@ -23,6 +23,12 @@ async def lifespan(app: FastAPI):
     await init_cache()
     from app.services.exam_service import rebuild_trie
     await rebuild_trie()
+    # TTL index — auto-expire rate-limit records after 1 hour
+    from app.core.database import get_db as _get_db
+    try:
+        await _get_db().pw_reset_rate_limits.create_index("expires_at", expireAfterSeconds=0)
+    except Exception:
+        pass
     log.info("app.ready")
     yield
     await close_db()
@@ -93,6 +99,8 @@ def create_app() -> FastAPI:
     # ── Serve Static Pages with Clean URLs ───────────────────────
     @app.get("/login", include_in_schema=False)
     @app.get("/signup", include_in_schema=False)
+    @app.get("/forgot-password", include_in_schema=False)
+    @app.get("/reset-password", include_in_schema=False)
     @app.get("/profile", include_in_schema=False)
     @app.get("/admin", include_in_schema=False)
     @app.get("/my-learning", include_in_schema=False)
@@ -107,8 +115,8 @@ def create_app() -> FastAPI:
     @app.get("/contact", include_in_schema=False)
     async def serve_pages(request: Request):
         page = request.url.path.strip("/")
-        # special mapping: "quiz" -> exam-quiz.html
-        filename = "exam-quiz.html" if page == "quiz" else f"{page}.html"
+        special = {"quiz": "exam-quiz.html", "forgot-password": "forgot-password.html", "reset-password": "reset-password.html"}
+        filename = special.get(page, f"{page}.html")
         frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
         return FileResponse(os.path.join(frontend_path, "pages", filename))
 

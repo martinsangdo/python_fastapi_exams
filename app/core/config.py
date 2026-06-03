@@ -40,6 +40,11 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
 
+    # Email — Resend
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "noreply@examprep.com"
+    APP_SUPPORT_EMAIL: str = "support@examprep.com"
+
     # Payment — PayPal
     PAYPAL_CLIENT_ID: str = ""
     PAYPAL_CLIENT_SECRET: str = ""

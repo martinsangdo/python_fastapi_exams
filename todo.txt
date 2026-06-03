@@ -1,0 +1,11 @@
+- change title: Practice Exams for NVIDIA-Certified Professional: Generative AI LLMs (NCP-GENL)
+- change description and disclaimer
+- remove logo
+
+- signup paypal
+- sendmail
+
+
+- check some values in config.py
+- update contents of fixed pages
+- contact page

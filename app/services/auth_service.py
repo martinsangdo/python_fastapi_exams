@@ -98,11 +98,36 @@ async def register_user(data: RegisterRequest) -> dict:
     return _build_tokens(user_doc)
 
 
-async def login_user(data: LoginRequest) -> dict:
+_LOGIN_FAIL_LIMIT = 10       # max failed attempts per email per hour
+_LOGIN_FAIL_WINDOW = 3600   # seconds
+
+
+async def login_user(data: LoginRequest, client_ip: str = "unknown") -> dict:
     db = get_db()
-    user = await db.users.find_one({"email": data.email.lower()})
+    from datetime import timedelta
+
+    email = data.email.lower()
+
+    # Check per-email failed-attempt limit (credential stuffing / brute-force)
+    window_start = datetime.now(timezone.utc) - timedelta(seconds=_LOGIN_FAIL_WINDOW)
+    fail_count = await db.pw_reset_rate_limits.count_documents({
+        "key": f"login_fail:{email}",
+        "created_at": {"$gte": window_start},
+    })
+    if fail_count >= _LOGIN_FAIL_LIMIT:
+        log.warning("auth.login.brute_force", email=email, ip=client_ip)
+        raise AuthError("Too many failed attempts. Please try again in an hour or reset your password.", 429)
+
+    user = await db.users.find_one({"email": email})
 
     if not user or not verify_password(data.password, user["hashed_password"]):
+        # Record failed attempt
+        now = datetime.now(timezone.utc)
+        await db.pw_reset_rate_limits.insert_one({
+            "key": f"login_fail:{email}",
+            "created_at": now,
+            "expires_at": now + timedelta(seconds=_LOGIN_FAIL_WINDOW),
+        })
         raise AuthError("Invalid email or password", 401)
 
     if not user.get("is_active", True):
@@ -136,6 +161,138 @@ async def logout_user(access_token: str, refresh_token: Optional[str] = None):
     if refresh_token:
         await blacklist_token(refresh_token, expire_seconds=7 * 24 * 3600)
     log.info("auth.logout")
+
+
+_RESET_TTL_SECONDS = 15 * 60  # 15 minutes
+_RATE_WINDOW_SECONDS = 3600   # 1 hour
+_RATE_LIMIT_PER_EMAIL = 3
+_RATE_LIMIT_PER_IP = 10
+
+
+async def forgot_password(email: str, client_ip: str) -> None:
+    """
+    Generate a signed reset token and send it via Resend.
+    Always returns without error to avoid user enumeration.
+    Rate-limited by IP and email via MongoDB TTL collection.
+    """
+    db = get_db()
+    from datetime import timedelta
+
+    # Rate limit by IP
+    ip_count = await db.pw_reset_rate_limits.count_documents({
+        "key": f"ip:{client_ip}",
+        "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(seconds=_RATE_WINDOW_SECONDS)},
+    })
+    if ip_count >= _RATE_LIMIT_PER_IP:
+        log.warning("auth.forgot_password.rate_limit_ip", ip=client_ip)
+        return
+
+    # Rate limit by email
+    email_count = await db.pw_reset_rate_limits.count_documents({
+        "key": f"email:{email.lower()}",
+        "created_at": {"$gte": datetime.now(timezone.utc) - timedelta(seconds=_RATE_WINDOW_SECONDS)},
+    })
+    if email_count >= _RATE_LIMIT_PER_EMAIL:
+        log.warning("auth.forgot_password.rate_limit_email", email=email)
+        return
+
+    user = await db.users.find_one({"email": email.lower()})
+
+    # Record attempt regardless of whether user exists (prevents timing-based enumeration)
+    now = datetime.now(timezone.utc)
+    await db.pw_reset_rate_limits.insert_one({
+        "key": f"ip:{client_ip}",
+        "created_at": now,
+        "expires_at": now + timedelta(seconds=_RATE_WINDOW_SECONDS),
+    })
+    await db.pw_reset_rate_limits.insert_one({
+        "key": f"email:{email.lower()}",
+        "created_at": now,
+        "expires_at": now + timedelta(seconds=_RATE_WINDOW_SECONDS),
+    })
+
+    if not user:
+        return  # silent — don't reveal whether email is registered
+
+    # Stateless HMAC token: signed with SECRET_KEY + current password hash slice
+    # Automatically invalidated when the password changes
+    import hmac, hashlib
+    signing_key = settings.SECRET_KEY + user["hashed_password"][:16]
+    user_id = str(user["_id"])
+    expires_at = int((now + timedelta(seconds=_RESET_TTL_SECONDS)).timestamp())
+    payload = f"{user_id}:{expires_at}"
+    sig = hmac.new(signing_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
+    token = f"{payload}:{sig}"
+
+    reset_url = f"{settings.FRONTEND_URL}/reset-password?token={token}"
+    await _send_reset_email(email, user.get("username", "there"), reset_url)
+    log.info("auth.forgot_password.sent", user_id=user_id)
+
+
+async def reset_password(token: str, new_password: str) -> None:
+    """Validate the HMAC token and update the user's password."""
+    import hmac, hashlib, time
+    from bson import ObjectId
+
+    parts = token.split(":")
+    if len(parts) != 3:
+        raise AuthError("Invalid or expired reset link", 400)
+
+    user_id, expires_at_str, sig = parts
+    try:
+        expires_at = int(expires_at_str)
+    except ValueError:
+        raise AuthError("Invalid or expired reset link", 400)
+
+    if time.time() > expires_at:
+        raise AuthError("Reset link has expired. Please request a new one.", 400)
+
+    db = get_db()
+    user = await db.users.find_one({"_id": ObjectId(user_id)})
+    if not user:
+        raise AuthError("Invalid or expired reset link", 400)
+
+    signing_key = settings.SECRET_KEY + user["hashed_password"][:16]
+    payload = f"{user_id}:{expires_at_str}"
+    expected_sig = hmac.new(signing_key.encode(), payload.encode(), hashlib.sha256).hexdigest()
+
+    if not hmac.compare_digest(sig, expected_sig):
+        raise AuthError("Invalid or expired reset link", 400)
+
+    new_hash = hash_password(new_password)
+    await db.users.update_one(
+        {"_id": ObjectId(user_id)},
+        {"$set": {"hashed_password": new_hash}},
+    )
+    log.info("auth.reset_password.success", user_id=user_id)
+
+
+async def _send_reset_email(to_email: str, username: str, reset_url: str) -> None:
+    import resend
+    resend.api_key = settings.RESEND_API_KEY
+    html = f"""
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+      <h2 style="color:#1a1a2e">Reset your password</h2>
+      <p>Hi {username},</p>
+      <p>We received a request to reset your ExamPrep password.
+         Click the button below — this link expires in <strong>15 minutes</strong>.</p>
+      <a href="{reset_url}"
+         style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;
+                border-radius:8px;text-decoration:none;font-weight:600;margin:16px 0">
+        Reset Password
+      </a>
+      <p style="color:#666;font-size:.875rem">
+        If you didn't request this, you can safely ignore this email.<br/>
+        This link will expire in 15 minutes.
+      </p>
+    </div>
+    """
+    resend.Emails.send({
+        "from": settings.EMAIL_FROM,
+        "to": [to_email],
+        "subject": "Reset your ExamPrep password",
+        "html": html,
+    })
 
 
 async def _verify_captcha(captcha_id: str, answer: Any) -> bool:
