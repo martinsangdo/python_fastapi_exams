@@ -82,6 +82,9 @@
     .ep-sh{font-size:1rem;font-weight:700;color:var(--ink1);margin-bottom:18px;display:flex;align-items:center;gap:10px}
     .ep-sh::after{content:'';flex:1;height:1px;background:var(--border)}
 
+    /* DISCLAIMER */
+    .ep-disclaimer-logo{max-height:150px;max-width:300px;object-fit:contain;margin-bottom:14px;display:block}
+
     /* SKILL GRID */
     .ep-skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:40px}
     .ep-skill-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:13px 15px;display:flex;align-items:flex-start;gap:9px}
@@ -210,8 +213,8 @@
         <div class="ep-left">
           <div>
             <div class="ep-cat">${toSnakeCase(exam.category)}</div>
-            <h1 class="ep-title">${exam.title}</h1>
-            <p class="ep-desc">${exam.description}</p>
+            <h1 class="ep-title">Practice Exams for ${exam.title}</h1>
+            <p class="ep-desc">This practice exam is designed to help you prepare for the ${exam.title} credential.<br><br>${exam.description}</p>
             <div class="ep-meta">
               <span class="ep-meta-item">${Utils.formatNumber(exam.students)} students enrolled</span>
               <span class="ep-meta-item">${svgAward(14)} ${getTotalQuestions()} questions</span>
@@ -370,7 +373,7 @@
       <div style="margin-bottom:40px">
         <div class="ep-sh">LEGAL NOTICE & DISCLAIMER:</div>
         <div class="ep-disclaimer">
-          <p>${exam.disclaimer}</p>
+          <p>${exam.disclaimer} The exam questions aren't copied directly from the official exam or another creator.</p>
         </div>
       </div>`;
     }
@@ -478,7 +481,7 @@
         State.purchases = [];
       }
 
-      document.title = exam.title + ' — ExamPrep';
+      document.title = `Practice Exams for ${exam.title} — ExamPrep`;
       buildPage();
     });
   </script>

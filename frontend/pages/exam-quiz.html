@@ -433,7 +433,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   if (State.user && !isGuestPractice) {
-    console.log('[attempt] user:', State.user, 'pkg.id:', pkg.id, 'exam.id:', exam.id, 'isGuest:', isGuestPractice);
+    // console.log('[attempt] user:', State.user, 'pkg.id:', pkg.id, 'exam.id:', exam.id, 'isGuest:', isGuestPractice);
     try {
       const attempt = await API.attempts.start(pkg.id, exam.id);
       attemptId = attempt.id || attempt._id || attempt.attempt_id;
