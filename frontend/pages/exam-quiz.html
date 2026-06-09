@@ -44,6 +44,7 @@ let timerInterval = null;
 let finished   = false;
 let isGuestPractice = false;
 let attemptId  = null;   // backend attempt ID
+let freeLimit  = Infinity; // max interactable questions for limited users
 
 function normalizeQuestionType(type) {
   if (!type) return 'single';
@@ -76,8 +77,10 @@ function isCorrect(q) {
 }
 
 function getScore() {
-  const correct = questions.filter(q => isCorrect(q)).length;
-  return { correct, total: questions.length, pct: Math.round(correct/questions.length*100) };
+  const scorable = questions.slice(0, freeLimit);
+  const correct = scorable.filter(q => isCorrect(q)).length;
+  const total = scorable.length;
+  return { correct, total, pct: Math.round(correct/total*100), packageTotal: questions.length };
 }
 
 function getOptionState(q, key) {
@@ -177,6 +180,7 @@ async function handleFinish() {
 // ── Render ─────────────────────────────────────────────────────────────────
 function renderQuestion() {
   const q = questions[currentIdx];
+  const isLocked = currentIdx >= freeLimit;
   const answeredCount = Object.keys(answers).length;
   const pct = Math.round(((currentIdx+1)/questions.length)*100);
 
@@ -193,6 +197,13 @@ function renderQuestion() {
           <div class="progress-bar"><div class="progress-fill" style="width:${pct}%"></div></div>
         </div>
 
+        ${isLocked ? `
+        <div style="text-align:center;padding:48px 24px;background:var(--surface);border-radius:var(--r-md);border:2px dashed var(--border)">
+          <div style="font-size:2.5rem;margin-bottom:16px">🔒</div>
+          <h3 style="font-size:1.125rem;font-weight:700;margin-bottom:8px">Question ${currentIdx+1} is locked</h3>
+          <p class="t-muted" style="margin-bottom:24px">Purchase this course to unlock all ${questions.length} questions.</p>
+          <a href="/detail/${slug}" class="btn btn-primary">Unlock Full Course</a>
+        </div>` : `
         <div class="question-badges">
           <span class="badge badge-gray">${q.type==='single'?'Single Answer':q.type==='multiple'?'Multiple Answers':'True / False'}</span>
           <span class="badge ${q.difficulty==='easy'?'badge-green':q.difficulty==='hard'?'badge-red':'badge-gold'}">${q.difficulty}</span>
@@ -228,13 +239,13 @@ function renderQuestion() {
                 }).join('')
               : `<p class="t-body">${q.explanation}</p>`
             }
-          </div>` : ''}
+          </div>` : ''}`}
 
         <div class="quiz-actions">
           <div class="flex gap-8"></div>
           <div class="flex gap-12">
             <button class="btn btn-ghost" id="prev-btn" ${currentIdx===0?'disabled':''}>← Previous</button>
-            ${!revealed[q.id]
+            ${!isLocked && !revealed[q.id]
               ? `<button class="btn btn-primary" id="check-btn">Check Answer</button>`
               : ''}
             ${currentIdx < questions.length-1
@@ -249,11 +260,12 @@ function renderQuestion() {
         <div style="font-weight:700;margin-bottom:16px;font-size:.9375rem">Question Navigator</div>
         <div class="q-grid">
           ${questions.map((qItem, i) => {
+            const locked = i >= freeLimit;
             const isAns = answers[qItem.id];
             const isRev = revealed[qItem.id];
             const isCor = isRev && isCorrect(qItem);
-            const cls = isRev ? (isCor?'correct':'wrong') : isAns?'answered':'';
-            return `<div class="q-dot ${cls} ${i===currentIdx?'current':''}" data-qi="${i}">${i+1}</div>`;
+            const cls = locked ? 'locked' : isRev ? (isCor?'correct':'wrong') : isAns?'answered':'';
+            return `<div class="q-dot ${cls} ${i===currentIdx?'current':''}" data-qi="${i}" ${locked?'title="Locked — purchase to unlock"':''}>${locked ? '🔒' : i+1}</div>`;
           }).join('')}
         </div>
 
@@ -286,14 +298,18 @@ function renderQuestion() {
   document.getElementById('finish-btn')?.addEventListener('click', handleFinish);
   document.getElementById('submit-btn')?.addEventListener('click', handleFinish);
   document.querySelectorAll('.q-dot').forEach(dot =>
-    dot.addEventListener('click', () => { currentIdx = parseInt(dot.dataset.qi); showHint=false; renderQuestion(); })
+    dot.addEventListener('click', () => {
+      const qi = parseInt(dot.dataset.qi);
+      if (qi >= freeLimit) return;
+      currentIdx = qi; showHint=false; renderQuestion();
+    })
   );
 }
 
 function renderResult() {
   clearInterval(timerInterval);
   document.getElementById('quiz-header').style.display = 'none';
-  const { correct, total, pct } = getScore();
+  const { correct, total, pct, packageTotal } = getScore();
   const pass = pct >= pkg.pass_score_pct;
   const timeUsed = (isGuestPractice || !hasPaid) ? 'N/A' : fmtTime(pkg.time_limit_minutes * 60 - timeLeft);
 
@@ -306,7 +322,7 @@ function renderResult() {
             <div class="result-label ${pass?'pass':'fail'}">${pass?'PASS':'FAIL'}</div>
           </div>
           <h2 class="t-h2 mb-8">${pass ? '🎉 Congratulations!' : '📚 Keep Studying'}</h2>
-          <p class="t-body t-muted mb-32">You scored <strong>${correct}/${total}</strong> correct · Pass score: <strong>${pkg.pass_score_pct}%</strong></p>
+          <p class="t-body t-muted mb-32">You scored <strong>${correct}/${total}</strong> correct${packageTotal > total ? ` (sample of ${packageTotal} total questions)` : ''} · Pass score: <strong>${pkg.pass_score_pct}%</strong></p>
           <div class="grid-3 mb-32">
             <div class="stat-card"><div class="stat-card-num">${correct}</div><div class="stat-card-lbl">Correct</div></div>
             <div class="stat-card"><div class="stat-card-num" style="color:var(--red)">${total-correct}</div><div class="stat-card-lbl">Incorrect</div></div>
@@ -414,26 +430,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     explanations: (q.explanations && typeof q.explanations === 'object') ? q.explanations : {},
   }));
 
-  if (isGuestPractice) {
+  const isLimited = !State.user || !hasPaid;
+
+  if (isLimited) {
+    freeLimit = 10;
     const cached = loadGuestSampleQuestions(exam.id, pkg.id);
-    if (cached && cached.length === Math.min(5, questions.length)) {
-      questions = cached;
+    const expectedLen = Math.min(freeLimit, questions.length);
+    let freeQuestions;
+    if (cached && cached.length === expectedLen) {
+      freeQuestions = cached;
     } else {
-      questions = shuffleArray(questions).slice(0, 5);
-      saveGuestSampleQuestions(exam.id, pkg.id, questions);
+      freeQuestions = shuffleArray(questions).slice(0, freeLimit).map(q => shuffleQuestionOptions(q));
+      saveGuestSampleQuestions(exam.id, pkg.id, freeQuestions);
     }
+    // Pad with placeholder locked entries up to the real package total
+    const totalQ = pkg.question_count || pkg.questions || questions.length;
+    const lockedCount = Math.max(0, totalQ - freeQuestions.length);
+    const lockedPlaceholders = Array.from({ length: lockedCount }, (_, i) => ({
+      id: `locked-${i}`, text: '', type: 'single', options: [], correct: [], explanation: '', explanations: {}, tags: [], difficulty: 'medium',
+    }));
+    questions = [...freeQuestions, ...lockedPlaceholders];
     document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title} (Sample Practice)`;
+    document.getElementById('timer').style.display = 'none';
   } else {
     document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title}`;
-  }
-
-  if (!State.user || isGuestPractice || !hasPaid) {
-    document.getElementById('timer').style.display = 'none';
-  }
-
-  // Shuffle option order for guest sample questions so cached items appear in different order
-  if (isGuestPractice) {
-    questions = questions.map(q => shuffleQuestionOptions(q));
   }
 
   if (State.user && !isGuestPractice) {

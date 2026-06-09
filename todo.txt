@@ -1,4 +1,3 @@
-- do not show timer in sample quiz
 - display more questions, but disabled 
 
 - sendmail account
@@ -6,3 +5,5 @@
 - check some values in config.py: APP_ENV, FRONTEND_URL, SECRET_KEY, MONGODB_DB_NAME, ,...
 - update contents of fixed pages
 - contact page
+
+- buy domain: CertQuestionBank

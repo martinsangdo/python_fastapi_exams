@@ -82,6 +82,7 @@
 .q-dot.current  { outline:2px solid var(--navy); outline-offset:1px; }
 .q-dot.correct  { background:var(--green); color:#fff; border-color:var(--green); }
 .q-dot.wrong    { background:var(--red); color:#fff; border-color:var(--red); }
+.q-dot.locked   { background:var(--surface); color:var(--text-muted); border-color:var(--border); cursor:not-allowed; opacity:.6; font-size:.6rem; }
 
 /* Result */
 .result-card      { text-align:center; padding:48px 32px; background:var(--white); border-radius:var(--r-lg); border:1px solid var(--border); box-shadow:var(--shadow); }
