@@ -6,6 +6,7 @@ consumer = KafkaConsumer(
     'my-topic-1',
     bootstrap_servers=['localhost:9092'],
     # auto_offset_reset='earliest',  # Start reading from the beginning of the topic
+    # group_id='test-group-id-1',  #used for multiple consumers to share the load
     value_deserializer=lambda x: json.loads(x.decode('utf-8'))
 )
 
