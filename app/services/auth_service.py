@@ -274,7 +274,7 @@ async def _send_reset_email(to_email: str, username: str, reset_url: str) -> Non
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
       <h2 style="color:#1a1a2e">Reset your password</h2>
       <p>Hi {username},</p>
-      <p>We received a request to reset your ExamPrep password.
+      <p>We received a request to reset your CertQuestionBank password.
          Click the button below — this link expires in <strong>15 minutes</strong>.</p>
       <a href="{reset_url}"
          style="display:inline-block;padding:12px 24px;background:#7c3aed;color:#fff;
@@ -290,7 +290,7 @@ async def _send_reset_email(to_email: str, username: str, reset_url: str) -> Non
     resend.Emails.send({
         "from": settings.EMAIL_FROM,
         "to": [to_email],
-        "subject": "Reset your ExamPrep password",
+        "subject": "Reset your CertQuestionBank password",
         "html": html,
     })
 

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Sign Up — ExamPrep</title>
+  <title>Sign Up — CertQuestionBank</title>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -13,7 +13,7 @@
 <div class="auth-page">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-text">ExamPrep</div>
+      <div class="auth-logo-text">CertQuestionBank</div>
       <h2 class="t-h2 mt-8 mb-4">Create your account</h2>
       <p class="t-muted t-sm">Join 50,000+ learners passing their certifications</p>
     </div>
@@ -122,7 +122,7 @@ async function doSignup(name, email, password, captcha_id, captcha_answer) {
     const user = res._user || { id: res.user_id, username, email, role: res.role || 'user' };
     State.setUser(user);
     document.getElementById('step-2-bar').style.background = 'var(--purple)';
-    Toast.show('Welcome to ExamPrep, ' + user.username + '!');
+    Toast.show('Welcome to CertQuestionBank, ' + user.username + '!');
     window.location.href = '/';
   } catch(e) {
     showError(e.message || 'Registration failed. Please try again.');

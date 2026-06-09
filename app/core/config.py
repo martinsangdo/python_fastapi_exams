@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # App
-    APP_NAME: str = "ExamPrep"
+    APP_NAME: str = "CertQuestionBank"
     APP_ENV: str = "development"
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"

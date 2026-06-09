@@ -1,9 +1,8 @@
-- display more questions, but disabled 
-
+- remove footer pages
+- update logo, favicon
+- add SEO description and metadata
 - sendmail account
 
 - check some values in config.py: APP_ENV, FRONTEND_URL, SECRET_KEY, MONGODB_DB_NAME, ,...
 - update contents of fixed pages
 - contact page
-
-- buy domain: CertQuestionBank

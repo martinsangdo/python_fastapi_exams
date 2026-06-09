@@ -324,7 +324,7 @@ const Nav = {
       userMenuHTML = '<a href="/login" class="btn btn-ghost">Log in</a><a href="/signup" class="btn btn-primary">Sign up</a>';
     }
     
-    const navHTML = '<nav class="nav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon">E</div>ExamPrep</a><div class="nav-links">' + navLinksHTML + userMenuHTML + '</div></div></nav>';
+    const navHTML = '<nav class="nav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon">E</div>CertQuestionBank</a><div class="nav-links">' + navLinksHTML + userMenuHTML + '</div></div></nav>';
     document.getElementById('nav-root').innerHTML = navHTML;
 
     // Search
@@ -352,7 +352,7 @@ const Nav = {
 const Footer = {
   render() {
     const certsHTML = ['AWS','Azure','GCP','Security+','AI','Project Management'].map(l => '<a href="#">' + l + '</a>').join('');
-    const footerHTML = '<footer class="footer"><div class="container"><div class="footer-grid"><div><span class="footer-logo">ExamPrep</span><p class="footer-desc">The most effective way to pass your IT certifications on the first try.<br/>All product names, logos, and brands are property of their respective owners. All company, product, and service names used on this website are for identification purposes only.</p></div><div><h4>Certifications</h4>' + certsHTML + '</div><div><h4>Company</h4><a href="/about-us">About Us</a><a href="/contact">Contact</a></div><div><h4>Support</h4><a href="/help-center">Help Center</a><a href="/refund-policy">Refund Policy</a><a href="/accessibility">Accessibility</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms</a></div></div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' ExamPrep. All rights reserved.</span></div></div></footer>';
+    const footerHTML = '<footer class="footer"><div class="container"><div class="footer-grid"><div><span class="footer-logo">CertQuestionBank</span><p class="footer-desc">The most effective way to pass your IT certifications on the first try.<br/>All product names, logos, and brands are property of their respective owners. All company, product, and service names used on this website are for identification purposes only.</p></div><div><h4>Certifications</h4>' + certsHTML + '</div><div><h4>Company</h4><a href="/about-us">About Us</a><a href="/contact">Contact</a></div><div><h4>Support</h4><a href="/help-center">Help Center</a><a href="/refund-policy">Refund Policy</a><a href="/accessibility">Accessibility</a><a href="/privacy-policy">Privacy Policy</a><a href="/terms">Terms</a></div></div><div class="footer-bottom"><span>© ' + new Date().getFullYear() + ' CertQuestionBank. All rights reserved.</span></div></div></footer>';
     document.getElementById('footer-root').innerHTML = footerHTML;
   },
 };
