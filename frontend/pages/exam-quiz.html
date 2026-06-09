@@ -295,7 +295,7 @@ function renderResult() {
   document.getElementById('quiz-header').style.display = 'none';
   const { correct, total, pct } = getScore();
   const pass = pct >= pkg.pass_score_pct;
-  const timeUsed = isGuestPractice ? 'N/A' : fmtTime(pkg.time_limit_minutes * 60 - timeLeft);
+  const timeUsed = (isGuestPractice || !hasPaid) ? 'N/A' : fmtTime(pkg.time_limit_minutes * 60 - timeLeft);
 
   document.getElementById('quiz-root').innerHTML = `
     <div style="padding:48px 0;background:var(--surface);min-height:100vh">
@@ -362,11 +362,11 @@ function renderResult() {
     document.getElementById('quiz-header').style.display = 'flex';
     document.getElementById('timer').classList.remove('warning');
     document.getElementById('timer-display').textContent = fmtTime(timeLeft);
-    if (isGuestPractice) {
+    if (isGuestPractice || !hasPaid) {
       document.getElementById('timer').style.display = 'none';
     }
     renderQuestion();
-    if (!isGuestPractice) startTimer();
+    if (hasPaid) startTimer();
   });
 }
 
@@ -399,6 +399,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('back-link').href = `/detail/${slug}`;
   timeLeft = (pkg.time_limit_minutes || 90) * 60;
   isGuestPractice = !State.user && pkg.order === 1;
+  const hasPaid = State.user && State.hasPurchased(exam.id);
 
   if (questions.length === 0) {
     document.getElementById('quiz-root').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">${questionsError ? 'Unable to load questions' : 'No questions available'}</h2><p class="t-muted mt-8">${questionsError || 'This practice test does not currently have questions.'}</p></div>`;
@@ -421,10 +422,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       questions = shuffleArray(questions).slice(0, 5);
       saveGuestSampleQuestions(exam.id, pkg.id, questions);
     }
-    document.getElementById('timer').style.display = 'none';
     document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title} (Sample Practice)`;
   } else {
     document.getElementById('quiz-pkg-title').textContent = `${pkg.title} — ${exam.title}`;
+  }
+
+  if (!State.user || isGuestPractice || !hasPaid) {
+    document.getElementById('timer').style.display = 'none';
   }
 
   // Shuffle option order for guest sample questions so cached items appear in different order
@@ -444,7 +448,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
   renderQuestion();
-  if (!isGuestPractice) startTimer();
+  if (hasPaid) startTimer();
 });
 </script>
 </body>
