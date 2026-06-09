@@ -4,7 +4,7 @@ app/main.py  —  FastAPI application entry point (MVC: Router/Controller layer)
 from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 import os, structlog
 
@@ -90,11 +90,56 @@ def create_app() -> FastAPI:
     async def chrome_devtools_noise():
         return {}
 
-    # ── Serve Exam Detail Page ───────────────────────────────────
+    # ── Serve Exam Detail Page (SSR meta tags for social crawlers) ──
     @app.get("/detail/{slug}", include_in_schema=False)
     async def serve_exam_detail(slug: str):
+        from app.services import exam_service
+        from app.core.config import settings
+
         frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
-        return FileResponse(os.path.join(frontend_path, "pages", "exam-detail.html"))
+        html = open(os.path.join(frontend_path, "pages", "exam-detail.html"), encoding="utf-8").read()
+
+        base_url = settings.FRONTEND_URL.rstrip("/")
+        title = f"Practice Exams for {slug.replace('-', ' ').title()} — CertQuestionBank"
+        desc = f"Prepare for the {slug.replace('-', ' ').title()} exam with full-length timed practice tests on CertQuestionBank."
+        image = f"{base_url}/og-image.png"
+        canonical = f"{base_url}/detail/{slug}"
+
+        try:
+            exam = await exam_service.get_exam_by_slug(slug)
+            if exam:
+                title = f"Practice Exams for {exam['title']} — CertQuestionBank"
+                q_count = exam.get("questions", "")
+                desc = f"Prepare for the {exam['title']} exam with {q_count} practice questions across 6 full-length timed tests. {exam.get('description', '')}".strip()
+                if exam.get("logo_url"):
+                    image = f"{base_url}{exam['logo_url']}"
+        except Exception:
+            pass
+
+        def esc(s: str) -> str:
+            return str(s).replace("&", "&amp;").replace('"', "&quot;").replace("<", "&lt;").replace(">", "&gt;")
+
+        meta_block = f"""
+  <meta name="description" content="{esc(desc)}"/>
+  <link rel="canonical" href="{esc(canonical)}"/>
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="CertQuestionBank"/>
+  <meta property="og:url" content="{esc(canonical)}"/>
+  <meta property="og:title" content="{esc(title)}"/>
+  <meta property="og:description" content="{esc(desc)}"/>
+  <meta property="og:image" content="{esc(image)}"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:image:alt" content="{esc(title)}"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:site" content="@certquestionbank"/>
+  <meta name="twitter:title" content="{esc(title)}"/>
+  <meta name="twitter:description" content="{esc(desc)}"/>
+  <meta name="twitter:image" content="{esc(image)}"/>
+  <meta name="twitter:image:alt" content="{esc(title)}"/>"""
+
+        html = html.replace("  <!-- SSR_META -->", meta_block)
+        return HTMLResponse(html)
 
     # ── Serve Static Pages with Clean URLs ───────────────────────
     @app.get("/login", include_in_schema=False)
