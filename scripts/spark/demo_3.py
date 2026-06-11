@@ -1,51 +1,55 @@
 import os
-import time
+
+# Tell Python which Java and Python versions to use for Spark.
+# Spark runs on the JVM internally, so it needs Java to start.
+os.environ["JAVA_HOME"] = "/opt/homebrew/opt/openjdk@17"
+os.environ["PYSPARK_PYTHON"] = "/opt/homebrew/bin/python3.10"
+os.environ["PYSPARK_DRIVER_PYTHON"] = "/opt/homebrew/bin/python3.10"
+
 from pyspark.sql import SparkSession
-from pyspark.sql.types import StructType, StructField, StringType, IntegerType
 from pyspark.sql.functions import col, expr
 
-# 1. Set up a local folder to simulate an active streaming source
-source_dir = "./stream_input_source"
-os.makedirs(source_dir, exist_ok=True)
-
+# SparkSession is the entry point to everything in Spark.
+# .master("local[*]") means: run on this machine using all available CPU cores.
+# In production you would point this to a real cluster URL instead.
 spark = SparkSession.builder \
-    .appName("AdvancedStreamingDemo") \
+    .appName("SimpleStreamingDemo") \
     .master("local[*]") \
     .getOrCreate()
 
-# 2. Define the explicit schema for incoming data stream
-schema = StructType([
-    StructField("user", StringType(), True),
-    StructField("cart_value", IntegerType(), True)
-])
-
-# 3. Read stream from the directory (Spark watches this folder for new files)
+# "rate" is a built-in Spark source that generates fake data automatically.
+# It produces one row every interval: (timestamp, value) where value is 0, 1, 2, 3, ...
+# rowsPerSecond=2 means Spark emits 2 new rows every second.
+# This is perfect for learning — no real data source or files required.
 streaming_df = spark.readStream \
-    .schema(schema) \
-    .json(source_dir)
+    .format("rate") \
+    .option("rowsPerSecond", 2) \
+    .load()
 
-# 4. Apply streaming transformation logic
-processed_stream = streaming_df.withColumn(
-    "status", 
-    expr("CASE WHEN cart_value > 500 THEN '🔥 HIGH POTENTIAL' ELSE 'Standard' END")
+# Add a new column "status" based on the auto-generated "value".
+# This is a transformation — it defines WHAT to do with each row,
+# but Spark does not actually run it yet (lazy evaluation).
+processed = streaming_df.withColumn(
+    "status",
+    expr("CASE WHEN value % 3 = 0 THEN 'HIGH' ELSE 'normal' END")
 )
 
-# 5. Write stream result to terminal console
-query = processed_stream.writeStream \
+# writeStream tells Spark to start consuming the stream and send results somewhere.
+# outputMode("append") = only show newly arrived rows each micro-batch (not all history).
+# format("console") = print results to the terminal.
+# .start() is what actually kicks off the streaming job.
+query = processed.writeStream \
     .outputMode("append") \
     .format("console") \
+    .option("truncate", False) \
     .start()
 
-print(f"--- STREAMING ACTIVE: Drop JSON files into '{source_dir}' directory ---")
-print("Simulating a live event drop now...")
+print("--- STREAMING ACTIVE (runs for 10 seconds) ---")
 
-# Mock Helper: Simulates an external application dropping a file into the directory
-time.sleep(3)
-mock_json_payload = '{"user": "Emma", "cart_value": 1200}\n{"user": "James", "cart_value": 250}'
-with open(f"{source_dir}/batch_1.json", "w") as f:
-    f.write(mock_json_payload)
+# awaitTermination(10) keeps the script alive for 10 seconds so we can see the output.
+# Without this the script would exit immediately and kill the stream.
+query.awaitTermination(10)
 
-# Keep the streaming query active for 15 seconds to observe console updates
-time.sleep(15)
+# Always stop the query and session to free up memory and ports.
 query.stop()
 spark.stop()
