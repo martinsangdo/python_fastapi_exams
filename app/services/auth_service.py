@@ -268,7 +268,12 @@ async def reset_password(token: str, new_password: str) -> None:
 
 
 async def _send_reset_email(to_email: str, username: str, reset_url: str) -> None:
+    if not settings.RESEND_API_KEY:
+        log.error("auth.reset_email.no_api_key")
+        raise AuthError("Email service is not configured", 500)
+
     import resend
+    import asyncio
     resend.api_key = settings.RESEND_API_KEY
     html = f"""
     <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
@@ -287,12 +292,17 @@ async def _send_reset_email(to_email: str, username: str, reset_url: str) -> Non
       </p>
     </div>
     """
-    resend.Emails.send({
-        "from": settings.EMAIL_FROM,
-        "to": [to_email],
-        "subject": "Reset your CertQuestionBank password",
-        "html": html,
-    })
+    try:
+        result = await asyncio.to_thread(resend.Emails.send, {
+            "from": settings.EMAIL_FROM,
+            "to": [to_email],
+            "subject": "Reset your CertQuestionBank password",
+            "html": html,
+        })
+        log.info("auth.reset_email.sent", to=to_email, result=result)
+    except Exception as e:
+        log.error("auth.reset_email.failed", to=to_email, error=str(e))
+        raise AuthError("Failed to send reset email. Please try again later.", 500)
 
 
 async def _verify_captcha(captcha_id: str, answer: Any) -> bool:

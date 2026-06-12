@@ -52,7 +52,10 @@ async def logout(data: RefreshRequest, current_user=Depends(get_current_user)):
 @router.post("/forgot-password", response_model=OkResponse)
 async def forgot_password(data: ForgotPasswordRequest, request: Request, _=Depends(forgot_pw_rate_limit)):
     client_ip = request.client.host if request.client else "unknown"
-    await auth_service.forgot_password(data.email, client_ip)
+    try:
+        await auth_service.forgot_password(data.email, client_ip)
+    except auth_service.AuthError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
     return OkResponse(message="If that email is registered you will receive a reset link shortly")
 
 
