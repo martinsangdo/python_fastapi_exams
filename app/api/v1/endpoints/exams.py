@@ -50,6 +50,11 @@ async def get_exam(slug: str, user=Depends(get_optional_user)):
     return exam
 
 
+@router.get("/{exam_id}/related")
+async def related_exams(exam_id: str, category: str = Query(...)):
+    return await exam_service.get_related_exams(exam_id=exam_id, category=category)
+
+
 @router.get("/{exam_id}/analytics")
 async def exam_analytics(exam_id: str, _=Depends(get_current_admin)):
     return await exam_service.get_exam_analytics(exam_id)

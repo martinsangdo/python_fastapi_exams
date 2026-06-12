@@ -502,3 +502,29 @@ def _serialize(doc: Optional[dict]) -> Optional[dict]:
     result = dict(doc)
     result["id"] = str(result.pop("_id"))
     return result
+
+
+async def get_related_exams(exam_id: str, category: str, limit: int = 4) -> list:
+    """Fetch related exams from tb_cert_metadata by category, excluding the current exam."""
+    cache_key = f"related:{exam_id}:{category}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    query: dict = {"category": category}
+    if category:
+        query["category"] = category
+
+    cursor = db.tb_cert_metadata.find(query).limit(limit + 1)
+    results = []
+    async for meta in cursor:
+        item = _serialize(meta)
+        if item.get("id") == exam_id or str(meta.get("_id")) == exam_id:
+            continue
+        results.append(_transform_cert(item))
+        if len(results) >= limit:
+            break
+
+    await cache_set(cache_key, results, ttl=300)
+    return results

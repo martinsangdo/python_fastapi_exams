@@ -164,6 +164,7 @@ const API = {
     addPackage:  (eid, d) => API.request('POST', `/exams/${eid}/packages`, d),
     addQuestion: (eid, pid, d) => API.request('POST', `/exams/${eid}/packages/${pid}/questions`, d),
     leaderboard: (eid, n=10) => API.request('GET', `/exams/${eid}/leaderboard?top_n=${n}`, null, false),
+    related:     (eid, cat) => API.request('GET', `/exams/${eid}/related?category=${encodeURIComponent(cat)}`, null, false),
     analytics:   (eid)    => API.request('GET', `/exams/${eid}/analytics`),
   },
   attempts: {

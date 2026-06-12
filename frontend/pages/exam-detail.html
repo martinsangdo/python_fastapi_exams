@@ -139,6 +139,21 @@
     .ep-cta-btn{background:#fff;color:var(--acc);padding:13px 30px;font-weight:700;font-size:.9375rem;border-radius:4px;cursor:pointer;border:none;font-family:var(--font);transition:opacity .15s}
     .ep-cta-btn:hover{opacity:.9}
 
+    /* RELATED EXAMS */
+    .ep-related{padding:48px 60px;background:var(--s2);border-top:1px solid var(--border)}
+    .ep-related-title{font-size:1.125rem;font-weight:700;color:var(--ink1);margin-bottom:24px}
+    .ep-related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .ep-rel-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s;text-decoration:none;display:block}
+    .ep-rel-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.09);transform:translateY(-2px)}
+    .ep-rel-thumb{height:100px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+    .ep-rel-thumb img{width:72px;height:72px;object-fit:contain;}
+    .ep-rel-body{padding:14px}
+    .ep-rel-cat{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--acc-m);margin-bottom:6px}
+    .ep-rel-name{font-size:.9rem;font-weight:700;color:var(--ink1);line-height:1.3;margin-bottom:8px}
+    .ep-rel-price{font-size:.875rem;font-weight:800;color:var(--acc)}
+    @media(max-width:900px){.ep-related{padding:36px 20px}.ep-related-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.ep-related-grid{grid-template-columns:1fr}}
+
     /* RESPONSIVE */
     @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 400px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
     @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-inst-stats{display:none}}
@@ -380,13 +395,38 @@
       </div>`;
     }
 
+    /* RELATED EXAMS */
+    function renderRelated(relatedExams) {
+      if (!relatedExams || relatedExams.length === 0) return '';
+      return `
+      <section class="ep-related">
+        <div class="ep-related-title">More exams in ${toSnakeCase(exam.category)}</div>
+        <div class="ep-related-grid">
+          ${relatedExams.map(e => `
+          <a class="ep-rel-card" href="/detail/${e.slug}">
+            <div class="ep-rel-thumb">
+              ${e.logo_url
+                ? `<img src="${e.logo_url}" alt="${e.title}" loading="lazy" onerror="this.parentElement.innerHTML='🎯'"/>`
+                : '🎯'}
+            </div>
+            <div class="ep-rel-body">
+              <div class="ep-rel-cat">${toSnakeCase(e.category)}</div>
+              <div class="ep-rel-name">${e.title}</div>
+              <div class="ep-rel-price">${Utils.formatPrice(e.price)}</div>
+            </div>
+          </a>`).join('')}
+        </div>
+      </section>`;
+    }
+
     /* ASSEMBLE */
-    function buildPage() {
+    function buildPage(relatedExams = []) {
       const purchased = State.hasPurchased(exam.id);
       document.getElementById('page-main').innerHTML =
         renderHero(purchased)
         + renderStatsBar()
-        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderDisclaimer()}</div></div>`;
+        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderDisclaimer()}</div></div>`
+        + renderRelated(relatedExams);
       bindAll(purchased);
     }
 
@@ -484,7 +524,13 @@
       }
 
       document.title = `Practice Exams for ${exam.title} — CertQuestionBank`;
-      buildPage();
+
+      let relatedExams = [];
+      try {
+        relatedExams = await API.exams.related(exam.id, exam.category);
+      } catch { /* non-critical, skip silently */ }
+
+      buildPage(relatedExams);
     });
   </script>
 </body>
