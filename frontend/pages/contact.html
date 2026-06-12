@@ -12,27 +12,47 @@
   <div id="nav-root"></div>
   <main class="container py-40">
     <a href="/" class="t-sm t-muted">← Back to Home</a>
-    <h1 class="t-h2 mt-12">Contact Us</h1>
-    <p class="t-body t-muted mt-8">We're here to help. Use the contact details below or email our support team.</p>
 
-    <section class="mt-24">
-      <h2 class="t-h4">Support</h2>
-      <p class="t-body t-muted">For help with accounts, purchases, or technical issues, email <a href="mailto:support@example.com">support@example.com</a>.</p>
-    </section>
+    <!-- Contact Form -->
+    <section class="mt-32">
+      <h2 class="t-h4">Send Us a Message</h2>
+      <p class="t-body t-muted mt-4">Fill out the form below and we'll get back to you within 48 hours.</p>
 
-    <section class="mt-20">
-      <h2 class="t-h4">Address</h2>
-      <p class="t-body t-muted">Headquarters: 123 Learning Way, Suite 100, Anytown, USA</p>
-    </section>
+      <form id="contact-form" class="mt-20" novalidate>
+        <div class="form-group mt-16">
+          <label class="t-sm t-muted" for="cf-name">Full Name <span style="color:var(--color-danger)">*</span></label>
+          <input id="cf-name" name="name" type="text" class="input mt-4" placeholder="Your name" maxlength="100" required/>
+        </div>
 
-    <section class="mt-20">
-      <h2 class="t-h4">Phone</h2>
-      <p class="t-body t-muted">US: +1 (555) 123-4567</p>
-    </section>
+        <div class="form-group mt-16">
+          <label class="t-sm t-muted" for="cf-email">Email Address <span style="color:var(--color-danger)">*</span></label>
+          <input id="cf-email" name="email" type="email" class="input mt-4" placeholder="you@example.com" required/>
+        </div>
 
-    <section class="mt-20">
-      <h2 class="t-h4">Business Inquiries</h2>
-      <p class="t-body t-muted">For partnerships or media, email <a href="mailto:business@example.com">business@example.com</a>.</p>
+        <div class="form-group mt-16">
+          <label class="t-sm t-muted" for="cf-subject">Subject <span style="color:var(--color-danger)">*</span></label>
+          <input id="cf-subject" name="subject" type="text" class="input mt-4" placeholder="How can we help?" maxlength="200" required/>
+        </div>
+
+        <div class="form-group mt-16">
+          <label class="t-sm t-muted" for="cf-message">Message <span style="color:var(--color-danger)">*</span></label>
+          <textarea id="cf-message" name="message" class="input mt-4" rows="6" placeholder="Tell us more…" maxlength="5000" required style="resize:vertical;"></textarea>
+        </div>
+
+        <div class="form-group mt-16">
+          <label class="t-sm t-muted">Verification Code <span style="color:var(--color-danger)">*</span></label>
+          <div class="flex gap-8 mt-4" style="align-items:center;">
+            <img id="cf-captcha-img" src="" alt="Captcha" style="height:38px;border-radius:4px;border:1px solid var(--border);cursor:pointer" title="Click to refresh"/>
+            <button type="button" class="btn btn-ghost btn-icon" id="cf-captcha-refresh" title="Refresh code" style="width:38px;height:38px;padding:0;flex-shrink:0"></button>
+            <input id="cf-captcha-answer" class="input" placeholder="Enter code" required style="flex:1"/>
+            <input type="hidden" id="cf-captcha-id"/>
+          </div>
+        </div>
+
+        <div id="cf-alert" class="mt-16" style="display:none;"></div>
+
+        <button id="cf-submit" type="submit" class="btn btn-primary" style="margin:20px">Send Message</button>
+      </form>
     </section>
   </main>
   <div id="footer-root"></div>
@@ -41,6 +61,109 @@
     document.addEventListener('DOMContentLoaded', () => {
       Nav.render('contact');
       Footer.render();
+
+      const form      = document.getElementById('contact-form');
+      const alert     = document.getElementById('cf-alert');
+      const submitBtn = document.getElementById('cf-submit');
+
+      if (State.user) {
+        document.getElementById('cf-name').value  = State.user.username || State.user.name || '';
+        document.getElementById('cf-email').value = State.user.email || '';
+      }
+
+      async function refreshCaptcha() {
+        try {
+          const cap = await API.auth.getCaptcha();
+          document.getElementById('cf-captcha-img').src = cap.image_url;
+          document.getElementById('cf-captcha-id').value = cap.id;
+          document.getElementById('cf-captcha-answer').value = '';
+        } catch (e) {
+          console.error('Failed to load captcha', e);
+        }
+      }
+
+      document.getElementById('cf-captcha-img').addEventListener('click', refreshCaptcha);
+      document.getElementById('cf-captcha-refresh').addEventListener('click', refreshCaptcha);
+      document.getElementById('cf-captcha-refresh').innerHTML = Icons.refresh(18);
+      refreshCaptcha();
+
+      function showAlert(msg, type) {
+        // type: 'success' | 'error'
+        alert.textContent = msg;
+        alert.style.display = 'block';
+        alert.style.padding = '12px 16px';
+        alert.style.borderRadius = '8px';
+        alert.style.fontSize = '0.9rem';
+        if (type === 'success') {
+          alert.style.background = 'var(--color-success-bg, #d1fae5)';
+          alert.style.color = 'var(--color-success, #065f46)';
+        } else {
+          alert.style.background = 'var(--color-danger-bg, #fee2e2)';
+          alert.style.color = 'var(--color-danger, #991b1b)';
+        }
+      }
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        alert.style.display = 'none';
+
+        const name           = document.getElementById('cf-name').value.trim();
+        const email          = document.getElementById('cf-email').value.trim();
+        const subject        = document.getElementById('cf-subject').value.trim();
+        const message        = document.getElementById('cf-message').value.trim();
+        const captcha_id     = document.getElementById('cf-captcha-id').value;
+        const captcha_answer = document.getElementById('cf-captcha-answer').value.trim();
+
+        if (!name || !email || !subject || !message || !captcha_answer) {
+          showAlert('Please fill in all required fields.', 'error');
+          return;
+        }
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+          showAlert('Please enter a valid email address.', 'error');
+          return;
+        }
+        const DISPOSABLE_DOMAINS = new Set([
+          'mailinator.com','guerrillamail.com','guerrillamail.net','guerrillamail.org',
+          'guerrillamail.biz','guerrillamail.de','guerrillamail.info','grr.la',
+          'tempmail.com','temp-mail.org','throwam.com','throwam.net',
+          'yopmail.com','yopmail.fr','trashmail.com','trashmail.me','trashmail.net',
+          'trashmail.org','trashmail.at','trashmail.io','trashmail.xyz',
+          'sharklasers.com','spam4.me','maildrop.cc','dispostable.com','discard.email',
+          'fakeinbox.com','mailnull.com','10minutemail.com','10minutemail.net',
+          '10minutemail.org','20minutemail.com','tempr.email','getnada.com',
+          'getairmail.com','filzmail.com','spambox.us','mytrashmail.com',
+        ]);
+        const emailDomain = email.split('@')[1].toLowerCase();
+        if (DISPOSABLE_DOMAINS.has(emailDomain)) {
+          showAlert('Disposable email addresses are not allowed.', 'error');
+          return;
+        }
+        if (subject.length < 20) {
+          showAlert('Subject must be at least 20 characters.', 'error');
+          return;
+        }
+        if (message.length < 50) {
+          showAlert('Message must be at least 50 characters.', 'error');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Sending…';
+
+        try {
+          await API.request('POST', '/contact', { name, email, subject, message, captcha_id, captcha_answer }, false);
+          showAlert("Your message has been received. We'll get back to you soon!", 'success');
+          form.reset();
+          refreshCaptcha();
+        } catch (err) {
+          const msg = err.message || 'Something went wrong. Please try again.';
+          showAlert(msg, 'error');
+          refreshCaptcha();
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Send Message';
+        }
+      });
     });
   </script>
 </body>

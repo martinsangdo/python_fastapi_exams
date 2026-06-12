@@ -29,6 +29,13 @@ async def lifespan(app: FastAPI):
         await _get_db().pw_reset_rate_limits.create_index("expires_at", expireAfterSeconds=0)
     except Exception:
         pass
+    try:
+        # Auto-purge contact inquiries older than 90 days
+        await _get_db().contact_inquiries.create_index("created_at", expireAfterSeconds=60 * 60 * 24 * 90)
+        # Index for the per-email-per-day rate-limit query
+        await _get_db().contact_inquiries.create_index([("email", 1), ("created_at", -1)])
+    except Exception:
+        pass
     log.info("app.ready")
     yield
     await close_db()
@@ -75,6 +82,7 @@ def create_app() -> FastAPI:
         ai_router,
     )
     from app.api.v1.endpoints.users   import router as users_router, rag_router
+    from app.api.v1.endpoints.contact import router as contact_router
 
     prefix = settings.API_V1_STR
     app.include_router(auth_router,     prefix=prefix)
@@ -84,6 +92,7 @@ def create_app() -> FastAPI:
     app.include_router(ai_router,       prefix=prefix)
     app.include_router(users_router,    prefix=prefix)
     app.include_router(rag_router,      prefix=prefix)
+    app.include_router(contact_router,  prefix=prefix)
 
     # ── Suppress Chrome DevTools Noise ───────────────────────────
     @app.get("/.well-known/appspecific/com.chrome.devtools.json", include_in_schema=False)

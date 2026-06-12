@@ -211,6 +211,19 @@ def new_answer(question_id: str, selected_keys: list[str], is_correct: bool, tim
     }
 
 
+# ─── Contact Inquiry ──────────────────────────────────────────────────────────
+def new_contact_inquiry(name: str, email: str, subject: str, message: str, ip: str) -> dict:
+    return {
+        "name": name.strip(),
+        "email": email.lower().strip(),
+        "subject": subject.strip(),
+        "message": message.strip(),
+        "ip": ip,
+        "status": "open",   # "open" | "resolved"
+        "created_at": utcnow(),
+    }
+
+
 # ─── Purchase ─────────────────────────────────────────────────────────────────
 def new_purchase(
     user_id: str,

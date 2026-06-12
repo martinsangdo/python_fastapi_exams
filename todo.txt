@@ -1,7 +1,5 @@
-- remove footer pages
 - update logo, favicon
 - sendmail account
 
 - check some values in config.py: APP_ENV, FRONTEND_URL, SECRET_KEY, MONGODB_DB_NAME, ,...
 - update contents of fixed pages
-- contact page

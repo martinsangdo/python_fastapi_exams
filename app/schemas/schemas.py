@@ -47,6 +47,43 @@ class RegisterRequest(BaseModel):
         return v
 
 
+# ─── Contact ──────────────────────────────────────────────────────────────────
+
+_DISPOSABLE_DOMAINS = {
+    "mailinator.com", "guerrillamail.com", "guerrillamail.net", "guerrillamail.org",
+    "guerrillamail.biz", "guerrillamail.de", "guerrillamail.info", "grr.la",
+    "tempmail.com", "temp-mail.org", "throwam.com", "throwam.net",
+    "yopmail.com", "yopmail.fr", "cool.fr.nf", "jetable.fr.nf",
+    "nospam.ze.tc", "nomail.xl.cx", "mega.zik.dj", "speed.1s.fr",
+    "trashmail.com", "trashmail.me", "trashmail.net", "trashmail.org",
+    "trashmail.at", "trashmail.io", "trashmail.xyz",
+    "sharklasers.com", "guerrillamailblock.com", "spam4.me",
+    "maildrop.cc", "dispostable.com", "discard.email",
+    "fakeinbox.com", "mailnull.com", "spamgourmet.com",
+    "10minutemail.com", "10minutemail.net", "10minutemail.org",
+    "20minutemail.com", "tempr.email", "dispostable.com",
+    "getnada.com", "getairmail.com", "filzmail.com",
+    "throwam.com", "spambox.us", "mytrashmail.com",
+}
+
+
+class ContactRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    subject: str = Field(..., min_length=1, max_length=200)
+    message: str = Field(..., min_length=10, max_length=5000)
+    captcha_id: str
+    captcha_answer: str
+
+    @field_validator("email")
+    @classmethod
+    def reject_disposable_email(cls, v: str) -> str:
+        domain = v.split("@")[-1].lower()
+        if domain in _DISPOSABLE_DOMAINS:
+            raise ValueError("Disposable email addresses are not allowed.")
+        return v
+
+
 class LoginRequest(BaseModel):
     email: EmailStr
     password: str
