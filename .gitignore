@@ -219,3 +219,4 @@ __marimo__/
 .aider*
 .idea/
 .DS_Store
+*.parquet
