@@ -220,3 +220,4 @@ __marimo__/
 .idea/
 .DS_Store
 *.parquet
+.env.example
