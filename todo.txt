@@ -2,3 +2,10 @@
 - sendmail account
 
 - check some values in config.py: APP_ENV, FRONTEND_URL, SECRET_KEY, MONGODB_DB_NAME, ,...
+
+docker build:
+docker buildx build --platform linux/arm64 -t certquestionbank:latest -f docker/Dockerfile .
+
+push:
+docker tag certquestionbank:latest sangdomartin/certquestionbank_repo:1.0.0
+docker push sangdomartin/certquestionbank_repo:1.0.0

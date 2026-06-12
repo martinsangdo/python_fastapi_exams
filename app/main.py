@@ -81,7 +81,7 @@ def create_app() -> FastAPI:
         payments_router,
         ai_router,
     )
-    from app.api.v1.endpoints.users   import router as users_router, rag_router
+    from app.api.v1.endpoints.users   import router as users_router
     from app.api.v1.endpoints.contact import router as contact_router
 
     prefix = settings.API_V1_STR
@@ -91,7 +91,6 @@ def create_app() -> FastAPI:
     app.include_router(payments_router, prefix=prefix)
     app.include_router(ai_router,       prefix=prefix)
     app.include_router(users_router,    prefix=prefix)
-    app.include_router(rag_router,      prefix=prefix)
     app.include_router(contact_router,  prefix=prefix)
 
     # ── Suppress Chrome DevTools Noise ───────────────────────────

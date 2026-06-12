@@ -1,0 +1,7 @@
+-r requirements.txt
+
+# Testing
+pytest==8.2.0
+pytest-asyncio==0.23.6
+mongomock-motor==0.0.21
+fakeredis==2.23.2
