@@ -71,6 +71,11 @@
         document.getElementById('cf-email').value = State.user.email || '';
       }
 
+      const params = new URLSearchParams(window.location.search);
+      if (params.get('subject')) {
+        document.getElementById('cf-subject').value = params.get('subject');
+      }
+
       async function refreshCaptcha() {
         try {
           const cap = await API.auth.getCaptcha();
