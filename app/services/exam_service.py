@@ -138,6 +138,7 @@ def _transform_cert(cert: dict) -> dict:
         "avg_pass_rate": cert.get("avg_pass_rate"),
         "symbol": normalized_symbol,
         "logo_url": logo_url,
+        "official_link": cert.get("link") or "",
     }
 
 
