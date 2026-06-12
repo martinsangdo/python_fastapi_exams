@@ -325,7 +325,7 @@ const Nav = {
       userMenuHTML = '<a href="/login" class="btn btn-ghost">Log in</a><a href="/signup" class="btn btn-primary">Sign up</a>';
     }
     
-    const navHTML = '<nav class="nav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon">E</div>CertQuestionBank</a><div class="nav-links">' + navLinksHTML + userMenuHTML + '</div></div></nav>';
+    const navHTML = '<nav class="nav"><div class="nav-inner"><a href="/" class="nav-logo"><div class="nav-logo-icon">C</div>CertQuestionBank</a><div class="nav-links">' + navLinksHTML + userMenuHTML + '</div></div></nav>';
     document.getElementById('nav-root').innerHTML = navHTML;
 
     // Search

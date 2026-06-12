@@ -1,5 +1,3 @@
-- update logo, favicon
-- sendmail account
 
 - check some values in config.py: APP_ENV, FRONTEND_URL, SECRET_KEY, MONGODB_DB_NAME, ,...
 
