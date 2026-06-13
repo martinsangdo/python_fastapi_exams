@@ -26,8 +26,10 @@
   <a id="cta-btn" href="/my-learning" class="btn btn-primary" style="display:none">Go to My Learning</a>
 </div>
 
+<script src="/js/app.js"></script>
 <script>
 (async () => {
+  State.init();
   const params = new URLSearchParams(location.search);
   const token = params.get("token"); // PayPal order ID
 
@@ -46,6 +48,7 @@
     const data = await res.json();
 
     if (res.ok) {
+      if (data.exam_id) State.addPurchase(data.exam_id);
       document.getElementById("status-icon").textContent = "✅";
       document.getElementById("status-title").textContent = "Payment confirmed!";
       document.getElementById("status-msg").textContent = "You now have full access to your exam.";

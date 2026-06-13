@@ -46,6 +46,7 @@ let finished   = false;
 let isGuestPractice = false;
 let attemptId  = null;   // backend attempt ID
 let freeLimit  = Infinity; // max interactable questions for limited users
+let hasPaid    = false;  // set after purchase check in DOMContentLoaded
 
 function normalizeQuestionType(type) {
   if (!type) return 'single';
@@ -416,7 +417,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('back-link').href = `/detail/${slug}`;
   timeLeft = (pkg.time_limit_minutes || 90) * 60;
   isGuestPractice = !State.user && pkg.order === 1;
-  const hasPaid = State.user && State.hasPurchased(exam.id);
+
+  if (State.user && !State.hasPurchased(exam.id)) {
+    try {
+      const purchases = await API.payments.myPurchases();
+      purchases.forEach(p => { if (p.exam_id) State.addPurchase(p.exam_id); });
+    } catch (e) { /* non-fatal */ }
+  }
+  hasPaid = State.user && State.hasPurchased(exam.id);
 
   if (questions.length === 0) {
     document.getElementById('quiz-root').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">${questionsError ? 'Unable to load questions' : 'No questions available'}</h2><p class="t-muted mt-8">${questionsError || 'This practice test does not currently have questions.'}</p></div>`;
