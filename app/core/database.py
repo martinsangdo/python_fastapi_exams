@@ -28,6 +28,10 @@ async def connect_db():
     await db.exams.create_index([("category", ASCENDING)])
     await db.exams.create_index([("title", TEXT)])  # full-text search
 
+    await db.tb_cert_metadata.create_index([("slug", ASCENDING)], unique=True)
+    await db.tb_cert_metadata.create_index([("symbol", ASCENDING)], unique=True)
+    await db.tb_cert_metadata.create_index([("collection_name", ASCENDING)], unique=True)
+
     await db.packages.create_index([("exam_id", ASCENDING)])
     await db.packages.create_index([("exam_id", ASCENDING), ("order", ASCENDING)])
 

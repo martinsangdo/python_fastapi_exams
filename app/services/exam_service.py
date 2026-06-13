@@ -81,12 +81,130 @@ async def get_exam_by_slug(slug: str) -> Optional[dict]:
         return cached
 
     db = get_db()
-    exam = await db.exams.find_one({"slug": slug})
-    if not exam:
-        return None
+    # 1. Try finding by slug in the metadata table first
+    query = {"slug": slug}
+    meta = await db.tb_cert_metadata.find_one(query)
+    
+    # Fallback: if no direct slug match, try matching the slug against the certification name
+    if not meta:
+        # Replace hyphens with spaces to match against titles/names
+        search_name = slug.replace('-', ' ')
+        meta = await db.tb_cert_metadata.find_one({"name": {"$regex": f".*{search_name}.*", "$options": "i"}})
 
-    result = _serialize(exam)
+    if meta:
+        # Use the linked exam ID to get full exam details
+        exam_id = meta.get("id")
+        exam = await db.exams.find_one({"_id": ObjectId(exam_id)}) if exam_id else None
+        
+        # Merge metadata and main exam record to ensure fields like 'duration' 
+        # and 'disclaimer' (which only exist in metadata) are preserved.
+        combined_data = _serialize(meta)
+        if exam:
+            combined_data.update(_serialize(exam))
+        result = _transform_cert(combined_data)
+    else:
+        # 2. Fallback to direct slug search in the exams collection
+        exam = await db.exams.find_one({"slug": slug})
+        if not exam:
+            return None
+        result = _transform_cert(_serialize(exam))
+
     await cache_set(cache_key, result, ttl=300)
+    return result
+
+
+def _transform_cert(cert: dict) -> dict:
+    """Standardize exam/certification object for frontend consumption."""
+    category = cert.get("category", "Other")
+    # Ensure we capture question count from all possible field names used in different collections
+    total_q = cert.get("multi_choice_questions") or cert.get("total_questions") or cert.get("questions", 0)
+    
+    symbol = cert.get("symbol") or ""
+    normalized_symbol = symbol.upper() if isinstance(symbol, str) else ""
+    logo_url = cert.get("logo_url") or (normalized_symbol and f"/logos/{normalized_symbol}.png") or ""
+    return {
+        "id": cert.get("id") or str(cert.get("_id")),
+        "slug": cert.get("slug") or "",
+        "title": cert.get("name") or cert.get("title") or "Untitled",
+        "category": category,
+        "description": cert.get("short_brief") or cert.get("description") or "",
+        "price": cert.get("price_usd") or cert.get("price") or 29.99,
+        "students": cert.get("students", 0),
+        "questions": total_q,
+        "learns": cert.get("what_learn") or cert.get("learns") or [],
+        "requirements": cert.get("requirements") or [],
+        "duration": cert.get("duration") or cert.get("time_limit_minutes") or 0,
+        "disclaimer": cert.get("disclaimer", ""),
+        "avg_pass_rate": cert.get("avg_pass_rate"),
+        "symbol": normalized_symbol,
+        "logo_url": logo_url,
+        "official_link": cert.get("link") or "",
+    }
+
+
+async def _find_cert_metadata(exam_id: str) -> Optional[dict]:
+    db = get_db()
+    meta = None
+    try:
+        meta = await db.tb_cert_metadata.find_one({"_id": ObjectId(exam_id)})
+    except Exception:
+        pass
+    if meta:
+        return meta
+    return await db.tb_cert_metadata.find_one({"id": exam_id})
+
+
+def _package_order_from_id(package_id: str) -> Optional[int]:
+    if not package_id:
+        return None
+    if package_id.startswith("pkg-"):
+        try:
+            return int(package_id.split("-", 1)[1])
+        except ValueError:
+            return None
+    if package_id.isdigit():
+        return int(package_id)
+    return None
+
+
+async def list_cert_categories() -> list[str]:
+    cache_key = CacheKeys.CERT_METADATA_CATEGORIES
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    categories = await db.tb_cert_metadata.distinct("category", {"category": {"$exists": True, "$ne": ""}})
+    categories = [c for c in categories if isinstance(c, str)]
+    await cache_set(cache_key, categories, ttl=600)
+    return categories
+
+
+async def list_certifications() -> dict:
+    """Fetch all certifications from tb_cert_metadata grouped by category."""
+    cache_key = CacheKeys.CERT_METADATA_CERTIFICATIONS
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    cursor = db.tb_cert_metadata.find({})
+    certs = [_serialize(c) async for c in cursor]
+    
+    # Group by category
+    by_category = {}
+    all_transformed = []
+    for cert in certs:
+        category = cert.get("category", "Other")
+        if category not in by_category:
+            by_category[category] = []
+        
+        cert_display = _transform_cert(cert)
+        by_category[category].append(cert_display)
+        all_transformed.append(cert_display)
+    
+    result = {"by_category": by_category, "all": all_transformed}
+    await cache_set(cache_key, result, ttl=600)
     return result
 
 
@@ -143,8 +261,47 @@ async def list_packages(exam_id: str) -> list[dict]:
         return cached
 
     db = get_db()
-    cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
-    packages = [_serialize(p) async for p in cursor]
+    meta = await _find_cert_metadata(exam_id)
+    packages = []
+
+    if meta and meta.get("collection_name"):
+        collection = db[meta["collection_name"]]
+        pipeline = [
+            {"$match": {"package": {"$exists": True}}},
+            {"$group": {"_id": "$package", "count": {"$sum": 1}}},
+        ]
+
+        counts = {}
+        async for row in collection.aggregate(pipeline):
+            try:
+                pkg_num = int(row["_id"])
+            except Exception:
+                continue
+            counts[pkg_num] = row["count"]
+
+        duration = meta.get("duration") or meta.get("time_limit_minutes") or 90
+        pass_score_pct = meta.get("pass_score_pct", 72)
+
+        for order in range(1, 7):
+            packages.append({
+                "id": f"pkg-{order}",
+                "exam_id": exam_id,
+                "order": order,
+                "title": f"Practice Test {order}",
+                "description": meta.get("short_brief", ""),
+                "time_limit_minutes": duration,
+                "pass_score_pct": pass_score_pct,
+                "question_count": counts.get(order, 0),
+                "is_active": True,
+            })
+    else:
+        cursor = db.packages.find({"exam_id": exam_id}).sort("order", 1)
+        async for p in cursor:
+            pkg = _serialize(p)
+            pkg["duration"] = pkg.get("time_limit_minutes", 0)
+            pkg["questions"] = pkg.get("question_count", 0)
+            packages.append(pkg)
+
     await cache_set(cache_key, packages, ttl=300)
     return packages
 
@@ -178,30 +335,98 @@ async def add_question(package_id: str, data: QuestionCreate) -> dict:
     return _serialize(doc)
 
 
-async def list_questions_public(package_id: str) -> list[dict]:
-    """Return questions WITHOUT correct answers — for test-takers."""
-    cache_key = CacheKeys.QUESTION_LIST.format(package_id=package_id)
+async def list_questions_public(exam_id: str, package_id: str) -> list[dict]:
+    """Return test questions for a purchased exam package."""
+    cache_key = CacheKeys.QUESTION_LIST.format(exam_id=exam_id, package_id=package_id)
     cached = await cache_get(cache_key)
     if cached:
         return cached
 
     db = get_db()
-    cursor = db.questions.find({"package_id": package_id})
+    meta = await _find_cert_metadata(exam_id)
     questions = []
-    async for q in cursor:
-        # Strip is_correct from options — security: never expose answers to client
-        public_options = [{"key": o["key"], "text": o["text"]} for o in q["options"]]
-        questions.append({
-            "id": str(q["_id"]),
-            "text": q["text"],
-            "type": q["type"],
-            "options": public_options,
-            "tags": q.get("tags", []),
-            "difficulty": q.get("difficulty", "medium"),
-        })
 
-    await cache_set(cache_key, questions, ttl=600)
+    if meta and meta.get("collection_name"):
+        package_order = _package_order_from_id(package_id)
+        if package_order is None:
+            return []
+
+        collection = db[meta["collection_name"]]
+        cursor = collection.find({"package": package_order})
+        async for q in cursor:
+            opts = q.get("options", {})
+            public_options = []
+            if isinstance(opts, dict):
+                public_options = [{"key": k, "text": v} for k, v in opts.items()]
+            elif isinstance(opts, list):
+                public_options = [{"key": o["key"], "text": o["text"]} for o in opts if o.get("key") is not None]
+
+            answer = q.get("answer")
+            correct = []
+            if isinstance(answer, str) and answer:
+                correct = [answer]
+            elif isinstance(answer, list):
+                correct = [str(a) for a in answer]
+
+            explanation_data = q.get("explanation", "")
+            if isinstance(explanation_data, dict):
+                explanations = {k: v for k, v in explanation_data.items()}
+                explanation_key = answer if isinstance(answer, str) else (",".join(str(a) for a in answer) if isinstance(answer, list) else "")
+                explanation = explanation_data.get(explanation_key, "") or " ".join([f"{k}: {v}" for k, v in explanation_data.items()])
+            else:
+                explanation = explanation_data or ""
+                explanations = {}
+
+            # Derive type from correct answer count — DB type field is unreliable
+            q_type = "single" if len(correct) <= 1 else "multiple"
+
+            questions.append({
+                "id": q.get("uuid") or str(q.get("_id")),
+                "text": q.get("question") or q.get("text", ""),
+                "type": q_type,
+                "options": public_options,
+                "correct": correct,
+                "explanation": explanation,
+                "explanations": explanations,
+                "tags": q.get("tags", []),
+                "difficulty": q.get("difficulty", "medium"),
+            })
+    else:
+        cursor = db.questions.find({"package_id": package_id})
+        async for q in cursor:
+            public_options = [{"key": o["key"], "text": o["text"]} for o in q["options"]]
+            questions.append({
+                "id": str(q["_id"]),
+                "text": q["text"],
+                "type": q["type"],
+                "options": public_options,
+                "correct": q.get("correct", []),
+                "explanation": q.get("explanation", "") if isinstance(q.get("explanation"), str) else "",
+                "explanations": q.get("explanation", {}) if isinstance(q.get("explanation"), dict) else {},
+                "tags": q.get("tags", []),
+                "difficulty": q.get("difficulty", "medium"),
+            })
+
+    await cache_set(cache_key, questions, ttl=604800)  # 7 days
     return questions
+
+
+PREVIEW_QUESTION_COUNT = 10
+
+async def list_preview_questions(exam_id: str, package_id: str, all_questions: list) -> list:
+    """
+    Return a stable 5-question preview for package 1 (non-paying users).
+    The selection is cached so the same 5 questions are shown on every visit.
+    """
+    cache_key = f"questions:preview:{exam_id}:{package_id}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    import random
+    sample = random.sample(all_questions, min(PREVIEW_QUESTION_COUNT, len(all_questions)))
+    await cache_set(cache_key, sample, ttl=604800)  # 7 days
+    return sample
 
 
 async def get_question_with_answers(question_id: str) -> Optional[dict]:
@@ -278,3 +503,29 @@ def _serialize(doc: Optional[dict]) -> Optional[dict]:
     result = dict(doc)
     result["id"] = str(result.pop("_id"))
     return result
+
+
+async def get_related_exams(exam_id: str, category: str, limit: int = 4) -> list:
+    """Fetch related exams from tb_cert_metadata by category, excluding the current exam."""
+    cache_key = f"related:{exam_id}:{category}"
+    cached = await cache_get(cache_key)
+    if cached:
+        return cached
+
+    db = get_db()
+    query: dict = {"category": category}
+    if category:
+        query["category"] = category
+
+    cursor = db.tb_cert_metadata.find(query).limit(limit + 1)
+    results = []
+    async for meta in cursor:
+        item = _serialize(meta)
+        if item.get("id") == exam_id or str(meta.get("_id")) == exam_id:
+            continue
+        results.append(_transform_cert(item))
+        if len(results) >= limit:
+            break
+
+    await cache_set(cache_key, results, ttl=300)
+    return results

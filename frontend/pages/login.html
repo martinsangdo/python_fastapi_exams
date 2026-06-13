@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Log In — ExamPrep</title>
+  <title>Log In — CertQuestionBank</title>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -13,7 +14,7 @@
 <div class="auth-page">
   <div class="auth-box">
     <div class="auth-logo">
-      <div class="auth-logo-text">ExamPrep</div>
+      <div class="auth-logo-text">CertQuestionBank</div>
       <h2 class="t-h2 mt-8 mb-4">Welcome back</h2>
       <p class="t-muted t-sm">Log in to continue your learning journey</p>
     </div>
@@ -33,24 +34,14 @@
         <label class="flex-center gap-8" style="cursor:pointer">
           <input type="checkbox" id="remember" style="accent-color:var(--purple)"/> Remember me
         </label>
-        <a href="#" style="color:var(--purple)">Forgot password?</a>
+        <a href="/forgot-password" style="color:var(--purple)">Forgot password?</a>
       </div>
       <button class="btn btn-primary btn-lg w-full" type="submit" id="submit-btn">Log In</button>
     </form>
 
-    <div class="auth-divider">or continue with</div>
-    <div class="flex gap-12">
-      <button class="btn btn-outline auth-social-btn" onclick="demoLogin('google')">🇬 Google</button>
-      <button class="btn btn-outline auth-social-btn" onclick="demoLogin('github')">⬛ GitHub</button>
-    </div>
-
     <p class="t-sm t-muted t-center mt-24">
       Don't have an account? <a href="/pages/signup.html" style="color:var(--purple);font-weight:600">Sign up for free</a>
     </p>
-    <div class="alert alert-info mt-16" style="font-size:.8rem">
-      <span>💡</span>
-      <div><strong>Demo:</strong> Any email + password works. Use <strong>admin@...</strong> for admin access.</div>
-    </div>
   </div>
 </div>
 

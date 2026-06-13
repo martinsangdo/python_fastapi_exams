@@ -2,9 +2,32 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ExamPrep — Master Any Certification</title>
-  <meta name="description" content="Practice with real exam-style questions. 6 full-length tests per certification. 95% pass rate."/>
+  <title>CertQuestionBank — Master Any Certification</title>
+  <meta name="description" content="Practice with real exam-style questions for AWS, Azure, GCP, CompTIA, and more. 6 full-length timed tests per certification. 85% pass rate."/>
+  <meta name="robots" content="index, follow"/>
+  <link rel="canonical" href="https://certquestionbank.com/"/>
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="CertQuestionBank"/>
+  <meta property="og:url" content="https://certquestionbank.com/"/>
+  <meta property="og:title" content="CertQuestionBank — Master Any Certification"/>
+  <meta property="og:description" content="Practice with real exam-style questions for AWS, Azure, GCP, CompTIA, and more. 6 full-length timed tests per certification. 85% pass rate."/>
+  <meta property="og:image" content="https://certquestionbank.com/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:image:alt" content="CertQuestionBank — Pass Your Certification On the First Try"/>
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:site" content="@certquestionbank"/>
+  <meta name="twitter:title" content="CertQuestionBank — Master Any Certification"/>
+  <meta name="twitter:description" content="Practice with real exam-style questions for AWS, Azure, GCP, CompTIA, and more. 6 full-length timed tests per certification."/>
+  <meta name="twitter:image" content="https://certquestionbank.com/og-image.png"/>
+  <meta name="twitter:image:alt" content="CertQuestionBank — Pass Your Certification On the First Try"/>
+
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -17,14 +40,14 @@
   <div class="container">
     <div class="hero-content">
       <div class="hero-tag">
-        <span class="badge badge-purple" style="padding:6px 14px;font-size:.8125rem">🎯 Trusted by 50,000+ learners</span>
+        <span class="badge badge-purple" style="padding:6px 14px;font-size:.8125rem">🎯 Trusted by 32,000+ learners</span>
       </div>
       <h1 class="t-hero" style="color:#fff;margin-bottom:16px">Pass Your Certification<br><em>On the First Try</em></h1>
       <p class="hero-sub">Practice with real exam-style questions across Cloud, Security, DevOps, and more. Each course includes 6 full-length timed tests.</p>
       <div class="hero-stats">
-        <div><div class="hero-stat-num">50K+</div><div class="hero-stat-lbl">Active learners</div></div>
-        <div><div class="hero-stat-num">200+</div><div class="hero-stat-lbl">Practice tests</div></div>
-        <div><div class="hero-stat-num">95%</div><div class="hero-stat-lbl">Pass rate</div></div>
+        <div><div class="hero-stat-num">32K+</div><div class="hero-stat-lbl">Active learners</div></div>
+        <div><div class="hero-stat-num">80+</div><div class="hero-stat-lbl">Practice tests</div></div>
+        <div><div class="hero-stat-num">85%</div><div class="hero-stat-lbl">Pass rate</div></div>
         <div><div class="hero-stat-num">6</div><div class="hero-stat-lbl">Tests per exam</div></div>
       </div>
     </div>
@@ -43,20 +66,17 @@
       <h2 class="t-h2" id="grid-title">All Certifications</h2>
       <p class="t-muted t-sm mt-4" id="grid-count"></p>
     </div>
-    <select class="select" id="sort-select" style="width:auto;padding:8px 32px 8px 14px">
-      <option value="popular">Most Popular</option>
-      <option value="rated">Highest Rated</option>
-      <option value="price-asc">Price: Low to High</option>
-      <option value="price-desc">Price: High to Low</option>
-    </select>
   </div>
-  <div class="grid-4" id="exam-grid"></div>
+  <div id="page-loader" style="display:flex;justify-content:center;align-items:center;min-height:300px">
+    <div class="loading-spinner"></div>
+  </div>
+  <div class="grid-4" id="exam-grid" style="display:none"></div>
 </div>
 
-<!-- Why ExamPrep -->
+<!-- Why CertQuestionBank -->
 <section class="page-section" style="background:var(--surface);border-top:1px solid var(--border)">
   <div class="container">
-    <h2 class="t-h2 t-center mb-32">Why learners choose ExamPrep</h2>
+    <h2 class="t-h2 t-center mb-32">Why learners choose CertQuestionBank</h2>
     <div class="feature-grid">
       <div class="feature-card">
         <div class="feature-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11"/></svg></div>
@@ -77,36 +97,109 @@
   </div>
 </section>
 
-<!-- Testimonials -->
-<section class="page-section">
-  <div class="container">
-    <h2 class="t-h2 t-center mb-32">What our students say</h2>
-    <div class="grid-3">
-      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
-        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="t-body" style="margin-bottom:16px">"Passed my AWS SAA on the first attempt! The practice tests were very similar to the real exam. Highly recommended."</p>
-        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--navy);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">A</div><div><div style="font-weight:600;font-size:.9375rem">Alex Chen</div><div class="t-sm t-muted">AWS Solutions Architect</div></div></div>
-      </div>
-      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
-        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="t-body" style="margin-bottom:16px">"Excellent quality questions with detailed explanations. The AI assistant helped me understand difficult concepts quickly."</p>
-        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--purple);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">M</div><div><div style="font-weight:600;font-size:.9375rem">Maria Garcia</div><div class="t-sm t-muted">Security Engineer</div></div></div>
-      </div>
-      <div style="background:var(--surface);border-radius:var(--r-lg);padding:28px;border:1px solid var(--border)">
-        <div class="stars mb-12"><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span></div>
-        <p class="t-body" style="margin-bottom:16px">"Scored 890/1000 on the real exam. The questions were harder than the actual exam which helped me prepare perfectly."</p>
-        <div class="flex-center gap-12"><div style="width:40px;height:40px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0">J</div><div><div style="font-weight:600;font-size:.9375rem">James Liu</div><div class="t-sm t-muted">DevOps Engineer</div></div></div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <div id="footer-root"></div>
 
 <script src="/js/app.js"></script>
+<style>
+@keyframes spin {
+  to { stroke-dashoffset: 0; }
+}
+
+.loading-icon-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-icon {
+  animation: spin 2s linear infinite;
+}
+</style>
 <script>
-const CATEGORIES = ['All','Cloud','Security','Programming','DevOps','Agile','Database','Networking'];
-let activeCat = 'All', activeSort = 'popular', searchQ = '';
+let CATEGORIES = ['All'];
+let activeCat = 'All', searchQ = '';
+
+function toSnakeCase(str) {
+  if (str === 'AI') return str;
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+async function loadCategories() {
+  try {
+    const resp = await fetch('/api/v1/exams/categories');
+    if (!resp.ok) throw new Error('Failed to load categories');
+    const data = await resp.json();
+    const serverCats = Array.isArray(data.categories) ? data.categories : [];
+    CATEGORIES = ['All', ...serverCats.filter(c => typeof c === 'string' && c.trim() !== '')];
+  } catch (err) {
+    CATEGORIES = ['All', 'AI', 'Project Management', 'Agile', 'Cloud', 'Data Engineer', 'Solutions Architect', 'Digital Intelligence', 'Security'];
+    console.warn('Could not load categories from server, using defaults.', err);
+  }
+}
+
+function enrichExamLogo(exam) {
+  const rawSymbol = exam.symbol || '';
+  const symbol = rawSymbol.toUpperCase();
+  const logo_url = exam.logo_url || (symbol ? `/logos/${symbol}.png` : '');
+  return { ...exam, symbol, logo_url };
+}
+
+async function loadCertifications() {
+  const CACHE_KEY = 'ep_home_certs_v2';
+  const EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
+
+  // Try to load from cache first
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.timestamp < EXPIRY) {
+        MOCK_EXAMS = parsed.data.map(enrichExamLogo);
+        document.getElementById('page-loader').style.display = 'none';
+        document.getElementById('exam-grid').style.display = '';
+        return; // Use cache and skip fetch
+      }
+    } catch (e) { localStorage.removeItem(CACHE_KEY); }
+  }
+
+  try {
+    const resp = await fetch('/api/v1/exams/certifications');
+    if (!resp.ok) throw new Error('Failed to load certifications');
+    const data = await resp.json();
+    const allCerts = Array.isArray(data.all) ? data.all : [];
+
+    // Transform and merge with MOCK_EXAMS
+    if (allCerts.length > 0) {
+      MOCK_EXAMS = allCerts.map((cert, idx) => enrichExamLogo({
+        id: cert.id,
+        slug: cert.slug,
+        title: cert.title,
+        category: cert.category,
+        price: cert.price,
+        students: cert.students,
+        description: cert.description,
+        learns: cert.learns || [],
+        symbol: cert.symbol,
+        logo_url: cert.logo_url,
+      }));
+
+      // Update Cache
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ timestamp: Date.now(), data: MOCK_EXAMS }));
+    }
+  } catch (err) {
+    console.warn('Could not load certifications from database, using mock data.', err);
+  }
+
+  document.getElementById('page-loader').style.display = 'none';
+  document.getElementById('exam-grid').style.display = '';
+}
 
 function getFiltered() {
   let exams = [...MOCK_EXAMS];
@@ -115,10 +208,7 @@ function getFiltered() {
     e.title.toLowerCase().includes(searchQ.toLowerCase()) ||
     e.category.toLowerCase().includes(searchQ.toLowerCase())
   );
-  if (activeSort === 'rated')      exams.sort((a,b) => b.rating - a.rating);
-  else if (activeSort === 'price-asc')  exams.sort((a,b) => a.price - b.price);
-  else if (activeSort === 'price-desc') exams.sort((a,b) => b.price - a.price);
-  else exams.sort((a,b) => b.students - a.students);
+  exams.sort((a,b) => b.students - a.students);
   return exams;
 }
 
@@ -128,31 +218,26 @@ function examCardHTML(exam) {
     <div class="exam-card-wrap">
       <div class="card exam-card" data-slug="${exam.slug}">
         <div class="exam-card-thumb">
-          <div class="exam-card-thumb-placeholder" style="background:var(--navy-soft)">${exam.emoji}</div>
-          ${exam.badge ? `<div class="exam-card-badge"><span class="badge badge-gold">${exam.badge}</span></div>` : ''}
+          ${exam.logo_url ? `<img class="exam-card-thumb-img" src="${exam.logo_url}" alt="${exam.title} logo" loading="lazy" onerror="this.style.display='none'" style="width:100%;height:100%;object-fit:contain;display:block;"/>` : `<div class="exam-card-thumb-placeholder" style="background:var(--navy-soft); width:100%; height:100%; display:flex; align-items:center; justify-content:center;"></div>`}
         </div>
         <div class="exam-card-body">
           <div class="exam-card-title truncate-2">${exam.title}</div>
-          <div class="exam-card-instructor">${exam.instructor}</div>
           <div class="exam-card-meta">
-            <span class="exam-card-rating">${exam.rating}</span>
-            <span class="stars">${Utils.stars(exam.rating)}</span>
-            <span class="exam-card-count">(${Utils.formatNumber(exam.students)})</span>
+            <span class="exam-card-count">${Utils.formatNumber(exam.students)} students</span>
           </div>
           <div class="exam-card-footer">
             <span class="exam-card-price">${Utils.formatPrice(exam.price)}</span>
-            <span class="exam-card-meta-right">${Icons.book(13)} ${exam.packages} tests</span>
           </div>
         </div>
       </div>
       <div class="exam-card-popup">
-        <span class="badge badge-purple mb-8">${exam.category}</span>
+        <span class="badge badge-purple mb-8">${toSnakeCase(exam.category)}</span>
         <h3 class="t-h3" style="margin:6px 0 8px">${exam.title}</h3>
         <p class="t-sm t-muted mb-12">${exam.description}</p>
         ${(exam.learns||[]).slice(0,4).map(l=>`<div class="popup-feature">${Icons.check(13)} <span class="t-sm">${l}</span></div>`).join('')}
         <div class="flex gap-8 mt-16">
-          <a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-primary" style="flex:1">See Details</a>
-          ${!purchased ? `<a href="/pages/exam-detail.html?slug=${exam.slug}" class="btn btn-gold">${Utils.formatPrice(exam.price)}</a>` : '<span class="badge badge-green" style="padding:8px 14px">Enrolled</span>'}
+          <a href="/detail/${exam.slug}" class="btn btn-primary" style="flex:1">See Details</a>
+          ${!purchased ? `<a href="/detail/${exam.slug}" class="btn btn-gold">${Utils.formatPrice(exam.price)}</a>` : '<span class="badge badge-green" style="padding:8px 14px">Enrolled</span>'}
         </div>
       </div>
     </div>`;
@@ -160,7 +245,7 @@ function examCardHTML(exam) {
 
 function renderCatBar() {
   document.getElementById('cat-bar').innerHTML = CATEGORIES.map(c =>
-    `<button class="cat-btn ${c===activeCat?'active':''}" data-cat="${c}">${c}</button>`
+    `<button class="cat-btn ${c===activeCat?'active':''}" data-cat="${c}">${c === 'All' ? 'All' : toSnakeCase(c)}</button>`
   ).join('');
   document.querySelectorAll('.cat-btn').forEach(btn =>
     btn.addEventListener('click', () => { activeCat = btn.dataset.cat; renderGrid(); renderCatBar(); })
@@ -169,7 +254,8 @@ function renderCatBar() {
 
 function renderGrid() {
   const exams = getFiltered();
-  document.getElementById('grid-title').textContent = activeCat==='All' ? 'All Certifications' : activeCat+' Certifications';
+  const catDisplay = activeCat === 'All' ? 'All Certifications' : toSnakeCase(activeCat) + ' Certifications';
+  document.getElementById('grid-title').textContent = catDisplay;
   document.getElementById('grid-count').textContent = exams.length + ' courses available';
   const grid = document.getElementById('exam-grid');
   if (!exams.length) {
@@ -178,18 +264,19 @@ function renderGrid() {
   }
   grid.innerHTML = exams.map(examCardHTML).join('');
   grid.querySelectorAll('.exam-card').forEach(card =>
-    card.addEventListener('click', () => window.location.href = `/pages/exam-detail.html?slug=${card.dataset.slug}`)
+    card.addEventListener('click', () => window.location.href = `/detail/${card.dataset.slug}`)
   );
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   Nav.render('home');
   Footer.render();
   const urlQ = Utils.getParam('q');
   if (urlQ) { searchQ = urlQ; }
+  await loadCategories();
+  await loadCertifications();
   renderCatBar();
   renderGrid();
-  document.getElementById('sort-select').addEventListener('change', e => { activeSort = e.target.value; renderGrid(); });
 });
 </script>
 </body>

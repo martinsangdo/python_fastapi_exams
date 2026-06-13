@@ -26,6 +26,17 @@ async def list_exams(
     return await exam_service.list_exams(category=category, page=page, page_size=page_size)
 
 
+@router.get("/categories")
+async def list_categories():
+    return {"categories": await exam_service.list_cert_categories()}
+
+
+@router.get("/certifications")
+async def list_certifications():
+    data = await exam_service.list_certifications()
+    return data
+
+
 @router.get("/autocomplete")
 async def autocomplete(q: str = Query(..., min_length=1)):
     return {"results": await exam_service.autocomplete_exams(q)}
@@ -37,6 +48,11 @@ async def get_exam(slug: str, user=Depends(get_optional_user)):
     if not exam:
         raise HTTPException(404, "Exam not found")
     return exam
+
+
+@router.get("/{exam_id}/related")
+async def related_exams(exam_id: str, category: str = Query(...)):
+    return await exam_service.get_related_exams(exam_id=exam_id, category=category)
 
 
 @router.get("/{exam_id}/analytics")
@@ -70,14 +86,16 @@ async def update_exam(exam_id: str, data: ExamUpdate, _=Depends(get_current_admi
 # ── Packages ─────────────────────────────────────────────────────────────────
 
 @router.get("/{exam_id}/packages")
-async def list_packages(exam_id: str, current_user=Depends(get_current_user)):
+async def list_packages(exam_id: str, current_user=Depends(get_optional_user)):
     from app.services.payment_service import has_access
-    from bson import ObjectId
-    user_id = str(current_user["_id"])
     packages = await exam_service.list_packages(exam_id)
 
-    # Mark which packages the user has access to
-    has = await has_access(user_id, exam_id)
+    has = False
+    if current_user:
+        user_id = str(current_user["_id"])
+        # Mark which packages the user has access to
+        has = await has_access(user_id, exam_id)
+
     for p in packages:
         p["has_access"] = has
     return packages
@@ -93,13 +111,41 @@ async def create_package(exam_id: str, data: PackageCreate, _=Depends(get_curren
 
 # ── Questions ─────────────────────────────────────────────────────────────────
 
+def _package_order_from_id(package_id: str):
+    if not package_id:
+        return None
+    if package_id.startswith("pkg-"):
+        try:
+            return int(package_id.split("-", 1)[1])
+        except ValueError:
+            return None
+    if package_id.isdigit():
+        return int(package_id)
+    return None
+
 @router.get("/{exam_id}/packages/{package_id}/questions")
-async def list_questions(exam_id: str, package_id: str, current_user=Depends(get_current_user)):
+async def list_questions(exam_id: str, package_id: str, current_user=Depends(get_optional_user)):
     from app.services.payment_service import has_access
-    user_id = str(current_user["_id"])
-    if not await has_access(user_id, exam_id):
-        raise HTTPException(403, "Purchase this exam to access questions")
-    return await exam_service.list_questions_public(package_id)
+
+    package_order = _package_order_from_id(package_id)
+
+    paid = False
+    if current_user:
+        paid = await has_access(str(current_user["_id"]), exam_id)
+
+    if package_order != 1:
+        if not current_user:
+            raise HTTPException(401, "Not authenticated")
+        if not paid:
+            raise HTTPException(403, "Purchase this exam to access questions")
+
+    questions = await exam_service.list_questions_public(exam_id, package_id)
+
+    # Package 1 is a free preview — cap at 10 cached questions for non-paying users
+    if package_order == 1 and not paid:
+        return await exam_service.list_preview_questions(exam_id, package_id, questions)
+
+    return questions
 
 
 @router.post("/{exam_id}/packages/{package_id}/questions", status_code=201)

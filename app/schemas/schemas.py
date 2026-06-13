@@ -5,7 +5,7 @@ Pydantic v2 schemas for request validation and response shaping.
 Pydantic: Module 1 (FastAPI MVC) — validate input/output automatically.
 """
 from datetime import datetime
-from typing import Optional, List, Any
+from typing import Optional, List, Any, Dict
 from pydantic import BaseModel, EmailStr, Field, field_validator
 import re
 
@@ -34,6 +34,8 @@ class RegisterRequest(BaseModel):
     username: str = Field(..., min_length=3, max_length=32, pattern=r"^[a-zA-Z0-9_]+$")
     password: str = Field(..., min_length=8, max_length=128)
     full_name: str = Field("", max_length=100)
+    captcha_id: str
+    captcha_answer: str
 
     @field_validator("password")
     @classmethod
@@ -42,6 +44,43 @@ class RegisterRequest(BaseModel):
             raise ValueError("Password must contain at least one uppercase letter")
         if not re.search(r"\d", v):
             raise ValueError("Password must contain at least one digit")
+        return v
+
+
+# ─── Contact ──────────────────────────────────────────────────────────────────
+
+_DISPOSABLE_DOMAINS = {
+    "mailinator.com", "guerrillamail.com", "guerrillamail.net", "guerrillamail.org",
+    "guerrillamail.biz", "guerrillamail.de", "guerrillamail.info", "grr.la",
+    "tempmail.com", "temp-mail.org", "throwam.com", "throwam.net",
+    "yopmail.com", "yopmail.fr", "cool.fr.nf", "jetable.fr.nf",
+    "nospam.ze.tc", "nomail.xl.cx", "mega.zik.dj", "speed.1s.fr",
+    "trashmail.com", "trashmail.me", "trashmail.net", "trashmail.org",
+    "trashmail.at", "trashmail.io", "trashmail.xyz",
+    "sharklasers.com", "guerrillamailblock.com", "spam4.me",
+    "maildrop.cc", "dispostable.com", "discard.email",
+    "fakeinbox.com", "mailnull.com", "spamgourmet.com",
+    "10minutemail.com", "10minutemail.net", "10minutemail.org",
+    "20minutemail.com", "tempr.email", "dispostable.com",
+    "getnada.com", "getairmail.com", "filzmail.com",
+    "throwam.com", "spambox.us", "mytrashmail.com",
+}
+
+
+class ContactRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    email: EmailStr
+    subject: str = Field(..., min_length=1, max_length=200)
+    message: str = Field(..., min_length=10, max_length=5000)
+    captcha_id: str
+    captcha_answer: str
+
+    @field_validator("email")
+    @classmethod
+    def reject_disposable_email(cls, v: str) -> str:
+        domain = v.split("@")[-1].lower()
+        if domain in _DISPOSABLE_DOMAINS:
+            raise ValueError("Disposable email addresses are not allowed.")
         return v
 
 
@@ -62,11 +101,30 @@ class RefreshRequest(BaseModel):
     refresh_token: str
 
 
+class ForgotPasswordRequest(BaseModel):
+    email: EmailStr
+
+
+class ResetPasswordRequest(BaseModel):
+    token: str
+    new_password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("new_password")
+    @classmethod
+    def password_strength(cls, v):
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"\d", v):
+            raise ValueError("Password must contain at least one digit")
+        return v
+
+
 # ─── User ─────────────────────────────────────────────────────────────────────
 
 class UserProfile(BaseModel):
     full_name: str = ""
     avatar_url: str = ""
+    bio: str = ""
 
 
 class UserStats(BaseModel):
@@ -89,6 +147,7 @@ class UserResponse(BaseModel):
 class UpdateProfileRequest(BaseModel):
     full_name: Optional[str] = Field(None, max_length=100)
     avatar_url: Optional[str] = None
+    bio: Optional[str] = Field(None, max_length=500)
 
 
 # ─── Exam ─────────────────────────────────────────────────────────────────────
@@ -128,6 +187,33 @@ class ExamSummary(BaseModel):
 
 
 class ExamDetail(ExamSummary):
+    duration: int = 0
+    disclaimer: str = ""
+    learns: List[str] = []
+    requirements: List[str] = []
+    created_at: datetime
+    updated_at: datetime
+
+
+class CertMetadataCreate(BaseModel):
+    name: str = Field(..., min_length=3, max_length=300)
+    collection_name: str = Field(..., min_length=3, max_length=100)
+    symbol: str = Field(..., min_length=2, max_length=50)
+    prompt_context: str = Field(..., min_length=20, max_length=20000)
+    multi_choice_prompt_prefix: str = Field(..., min_length=10, max_length=2000)
+    multi_choice_questions: int = Field(..., ge=0, le=200)
+    multi_selection_prompt_prefix: str = Field(..., min_length=10, max_length=2000)
+    category: str = Field(..., min_length=2, max_length=100)
+    short_brief: str = Field(..., min_length=10, max_length=2000)
+    slug: str = Field(..., pattern=r"^[a-z0-9-]+$", max_length=100)
+    duration: int = Field(0, ge=0, description="Duration in minutes")
+    disclaimer: str = Field("", max_length=5000)
+    what_learn: List[str] = []
+    requirements: List[str] = []
+
+
+class CertMetadataResponse(CertMetadataCreate):
+    id: str
     created_at: datetime
     updated_at: datetime
 
@@ -186,6 +272,23 @@ class QuestionCreate(BaseModel):
         return v
 
 
+class CertQuestionCreate(BaseModel):
+    question: str = Field(..., min_length=10, max_length=3000)
+    options: Dict[str, str] = Field(..., min_length=2)
+    answer: str = Field(..., pattern=r"^[A-E]$")
+    explanation: Dict[str, str] = Field(..., min_length=2)
+    type: str = Field("multiple-choice", pattern=r"^(multiple-choice|single-choice|true-false)$")
+    domain: int = Field(..., ge=1)
+    exported: int = Field(0, ge=0)
+    uuid: str = Field(..., min_length=1)
+
+
+class CertQuestionResponse(CertQuestionCreate):
+    id: str
+    created_at: datetime
+    updated_at: datetime
+
+
 class QuestionPublic(BaseModel):
     """Question schema for test-takers — hides is_correct and explanation."""
     id: str
@@ -215,6 +318,7 @@ class QuestionAdmin(BaseModel):
 
 class StartAttemptRequest(BaseModel):
     package_id: str
+    exam_id: str = ""
 
 
 class SubmitAnswerRequest(BaseModel):
@@ -264,8 +368,8 @@ class CreateCheckoutRequest(BaseModel):
 
 
 class CheckoutResponse(BaseModel):
-    checkout_url: str
-    session_id: str
+    approval_url: str   # redirect user here to approve payment on PayPal
+    order_id: str
 
 
 class PurchaseResponse(BaseModel):

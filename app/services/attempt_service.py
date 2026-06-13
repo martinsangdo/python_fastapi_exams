@@ -24,17 +24,30 @@ _ATTEMPT_STATE_PREFIX = "attempt_state:"
 _ATTEMPT_STATE_TTL = 7200  # 2 hours — longer than any exam
 
 
-async def start_attempt(user_id: str, package_id: str) -> dict:
+async def start_attempt(user_id: str, package_id: str, exam_id: str = "") -> dict:
     db = get_db()
 
-    # Check purchase access
-    package = await db.packages.find_one({"_id": ObjectId(package_id)})
-    if not package:
-        raise ValueError("Package not found")
+    # Support both ObjectId packages (db.packages) and cert-based pkg-{n} packages
+    if package_id.startswith("pkg-"):
+        if not exam_id:
+            raise ValueError("exam_id required for cert-based packages")
+        from app.services.exam_service import _find_cert_metadata
+        pkg_order = int(package_id.split("-")[1])
+        meta = await _find_cert_metadata(exam_id)
+        question_count = 0
+        if meta and meta.get("collection_name"):
+            question_count = await db[meta["collection_name"]].count_documents({"package": pkg_order})
+        pass_score_pct = (meta or {}).get("pass_score_pct", 72)
+        package = {"exam_id": exam_id, "question_count": question_count, "pass_score_pct": pass_score_pct}
+    else:
+        package = await db.packages.find_one({"_id": ObjectId(package_id)})
+        if not package:
+            raise ValueError("Package not found")
+        exam_id = package["exam_id"]
 
     purchase = await db.purchases.find_one({
         "user_id": user_id,
-        "exam_id": package["exam_id"],
+        "exam_id": exam_id,
         "status": "completed",
     })
     if not purchase:
@@ -49,13 +62,10 @@ async def start_attempt(user_id: str, package_id: str) -> dict:
     if existing:
         return _serialize(existing)   # resume existing attempt
 
-    doc = new_attempt(user_id=user_id, package_id=package_id, exam_id=package["exam_id"])
+    doc = new_attempt(user_id=user_id, package_id=package_id, exam_id=exam_id)
     doc["total_questions"] = package["question_count"]
     result = await db.attempts.insert_one(doc)
     doc["_id"] = result.inserted_id
-
-    # Pre-load all questions into Redis hash map for fast grading
-    await _preload_questions_to_cache(package_id)
 
     log.info("attempt.started", attempt_id=str(result.inserted_id), user_id=user_id)
     return _serialize(doc)
@@ -113,7 +123,7 @@ async def submit_answer(attempt_id: str, user_id: str, question_id: str,
     }
 
 
-async def finish_attempt(attempt_id: str, user_id: str) -> dict:
+async def finish_attempt(attempt_id: str, user_id: str, correct_count: int = None, total_questions: int = None) -> dict:
     """Calculate final score, mark attempt complete, update user stats."""
     db = get_db()
     attempt = await db.attempts.find_one({"_id": ObjectId(attempt_id), "user_id": user_id})
@@ -122,11 +132,15 @@ async def finish_attempt(attempt_id: str, user_id: str) -> dict:
     if attempt["status"] != "in_progress":
         raise ValueError("Attempt is already completed")
 
-    package = await db.packages.find_one({"_id": ObjectId(attempt["package_id"])})
-    total = attempt.get("total_questions") or package["question_count"]
-    correct = attempt.get("correct_count", 0)
+    pkg_id = attempt["package_id"]
+    if pkg_id.startswith("pkg-"):
+        package = {"question_count": attempt.get("total_questions", 0), "pass_score_pct": 72}
+    else:
+        package = await db.packages.find_one({"_id": ObjectId(pkg_id)}) or {}
+    total = total_questions if total_questions is not None else (attempt.get("total_questions") or package.get("question_count", 0))
+    correct = correct_count if correct_count is not None else attempt.get("correct_count", 0)
     score = calculate_score(correct, total)
-    passed = score >= package["pass_score_pct"]
+    passed = score >= package.get("pass_score_pct", 72)
     completed_at = utcnow()
 
     # Calculate time spent
@@ -164,18 +178,22 @@ async def finish_attempt(attempt_id: str, user_id: str) -> dict:
 
     log.info("attempt.completed", attempt_id=attempt_id, score=score, passed=passed)
 
-    # Build results with explanations
+    # Build results with explanations (only for db.questions-based packages)
     answers_with_detail = []
-    for ans in attempt.get("answers", []):
-        q = await db.questions.find_one({"_id": ObjectId(ans["question_id"])})
-        correct_keys = [o["key"] for o in q["options"] if o["is_correct"]] if q else []
-        answers_with_detail.append({
-            "question_id": ans["question_id"],
-            "selected_keys": ans["selected_keys"],
-            "correct_keys": correct_keys,
-            "is_correct": ans["is_correct"],
-            "explanation": q.get("explanation", "") if q else "",
-        })
+    if not attempt["package_id"].startswith("pkg-"):
+        for ans in attempt.get("answers", []):
+            try:
+                q = await db.questions.find_one({"_id": ObjectId(ans["question_id"])})
+            except Exception:
+                q = None
+            correct_keys = [o["key"] for o in q["options"] if o["is_correct"]] if q else []
+            answers_with_detail.append({
+                "question_id": ans["question_id"],
+                "selected_keys": ans["selected_keys"],
+                "correct_keys": correct_keys,
+                "is_correct": ans["is_correct"],
+                "explanation": q.get("explanation", "") if q else "",
+            })
 
     return {
         "attempt_id": attempt_id,

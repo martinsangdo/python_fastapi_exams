@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Accessibility — CertQuestionBank</title>
+  <link rel="stylesheet" href="/css/base.css"/>
+  <link rel="stylesheet" href="/css/nav.css"/>
+  <link rel="stylesheet" href="/css/components.css"/>
+</head>
+<body>
+  <div id="nav-root"></div>
+
+  <!-- Hero -->
+  <section style="background:var(--navy);padding:80px 0 72px;">
+    <div class="container">
+      <a href="/" class="t-sm" style="color:rgba(255,255,255,.6);">← Back to Home</a>
+      <h1 class="t-hero mt-20" style="color:#fff;">Accessibility</h1>
+      <p class="t-body mt-20" style="color:rgba(255,255,255,.75);max-width:560px;">CertQuestionBank is committed to providing an inclusive and accessible learning experience for every student, regardless of ability or assistive technology.</p>
+      <p class="t-sm mt-12" style="color:rgba(255,255,255,.45);">Last updated: June 2026</p>
+    </div>
+  </section>
+
+  <main class="container" style="padding-top:64px;padding-bottom:80px;">
+
+    <!-- Feature cards -->
+    <div class="grid-3" style="gap:28px;margin-bottom:56px;">
+      <div class="card" style="padding:36px 28px;">
+        <div style="width:48px;height:48px;border-radius:var(--r-md);background:var(--purple-bg);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+        </div>
+        <h3 class="t-h3">Keyboard Navigation</h3>
+        <p class="t-body t-muted" style="margin-top:12px;">All interactive elements are fully reachable and operable using a keyboard alone, with visible focus indicators throughout.</p>
+      </div>
+      <div class="card" style="padding:36px 28px;">
+        <div style="width:48px;height:48px;border-radius:var(--r-md);background:var(--green-bg);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+        </div>
+        <h3 class="t-h3">Screen Reader Support</h3>
+        <p class="t-body t-muted" style="margin-top:12px;">We use semantic HTML5 and ARIA landmarks so screen readers like NVDA, JAWS, and VoiceOver can accurately describe page content.</p>
+      </div>
+      <div class="card" style="padding:36px 28px;">
+        <div style="width:48px;height:48px;border-radius:var(--r-md);background:var(--purple-bg);display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--purple)" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/></svg>
+        </div>
+        <h3 class="t-h3">Colour &amp; Contrast</h3>
+        <p class="t-body t-muted" style="margin-top:12px;">Text and interactive components meet WCAG 2.1 AA contrast ratios. We do not rely solely on colour to convey meaning.</p>
+      </div>
+    </div>
+
+    <div style="max-width:800px;">
+
+      <section>
+        <h2 class="t-h2">Keyboard Navigation</h2>
+        <div class="divider" style="margin-top:12px;margin-bottom:20px;"></div>
+        <p class="t-body t-muted">Our platform supports standard keyboard navigation patterns throughout:</p>
+        <ul class="t-body t-muted" style="margin-top:16px;padding-left:24px;line-height:2.2;">
+          <li><strong>Tab / Shift+Tab</strong> — move forward and backward between interactive elements.</li>
+          <li><strong>Enter / Space</strong> — activate buttons, links, and controls.</li>
+          <li><strong>Arrow keys</strong> — navigate within menus, radio groups, and option lists.</li>
+          <li><strong>Escape</strong> — dismiss modals and close dropdown menus.</li>
+        </ul>
+      </section>
+
+      <div class="divider" style="margin-top:48px;"></div>
+
+      <section style="margin-top:48px;">
+        <h2 class="t-h2">Screen Reader Compatibility</h2>
+        <div class="divider" style="margin-top:12px;margin-bottom:20px;"></div>
+        <p class="t-body t-muted">We have tested our platform with the following screen reader and browser combinations:</p>
+        <ul class="t-body t-muted" style="margin-top:16px;padding-left:24px;line-height:2.2;">
+          <li>NVDA with Chrome and Firefox on Windows</li>
+          <li>JAWS with Chrome and Edge on Windows</li>
+          <li>VoiceOver with Safari on macOS and iOS</li>
+          <li>TalkBack with Chrome on Android</li>
+        </ul>
+        <p class="t-body t-muted" style="margin-top:16px;">If you encounter compatibility issues outside these combinations, please let us know and we will do our best to address them.</p>
+      </section>
+
+      <div class="divider" style="margin-top:48px;"></div>
+
+      <section style="margin-top:48px;">
+        <h2 class="t-h2">Text &amp; Visual Preferences</h2>
+        <div class="divider" style="margin-top:12px;margin-bottom:20px;"></div>
+        <p class="t-body t-muted">Our interface respects browser and OS-level accessibility preferences:</p>
+        <ul class="t-body t-muted" style="margin-top:16px;padding-left:24px;line-height:2.2;">
+          <li>Text can be resized up to 200% without loss of content or functionality.</li>
+          <li>Layouts reflow at smaller viewports and are fully usable on mobile devices.</li>
+          <li>We honour the <code>prefers-reduced-motion</code> media query to minimise animations for users who are sensitive to motion.</li>
+        </ul>
+      </section>
+
+      <div class="divider" style="margin-top:48px;"></div>
+
+    </div>
+  </main>
+  <div id="footer-root"></div>
+  <script src="/js/app.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      Nav.render();
+      Footer.render();
+    });
+  </script>
+</body>
+</html>

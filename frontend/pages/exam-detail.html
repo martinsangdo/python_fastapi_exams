@@ -2,8 +2,11 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Exam Detail — ExamPrep</title>
+  <title>Exam Detail — CertQuestionBank</title>
+  <meta name="robots" content="index, follow"/>
+  <!-- SSR_META -->
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -25,8 +28,8 @@
     .ep-left{background:var(--ink1);padding:56px 60px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
     .ep-left::after{content:'';position:absolute;bottom:-60px;right:-60px;width:260px;height:260px;border-radius:50%;border:40px solid rgba(255,255,255,.04)}
     .ep-right{background:var(--acc);display:flex;flex-direction:column;overflow:hidden}
-    .ep-emoji-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative}
-    .ep-emoji-zone::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.15)}
+    .ep-emoji-zone{flex:1;display:flex;align-items:center;justify-content:center;font-size:7rem;position:relative;background:white;}
+    .ep-emoji-zone::before{content:'';position:absolute;inset:0;background:rgba(0,0,0,0)}
     .ep-emoji-inner{position:relative;z-index:1;filter:drop-shadow(0 8px 32px rgba(0,0,0,.3))}
     .ep-price-strip{background:rgba(0,0,0,.25);padding:20px 28px;display:flex;align-items:center;justify-content:space-between;gap:12px}
     .ep-price-num{font-size:2.25rem;font-weight:800;color:#fff;line-height:1}
@@ -39,8 +42,6 @@
     .ep-desc{font-size:.9375rem;line-height:1.7;color:rgba(255,255,255,.65);margin-bottom:24px;max-width:520px}
     .ep-meta{display:flex;align-items:center;gap:20px;flex-wrap:wrap}
     .ep-meta-item{display:flex;align-items:center;gap:8px;font-size:.875rem;color:rgba(255,255,255,.6)}
-    .ep-rating-val{color:#fac775;font-weight:700}
-    .ep-rating-stars{color:#fac775}
     .ep-by{margin-top:24px;font-size:.875rem;color:rgba(255,255,255,.4)}
     .ep-by strong{color:rgba(255,255,255,.7)}
 
@@ -84,6 +85,9 @@
     .ep-sh{font-size:1rem;font-weight:700;color:var(--ink1);margin-bottom:18px;display:flex;align-items:center;gap:10px}
     .ep-sh::after{content:'';flex:1;height:1px;background:var(--border)}
 
+    /* DISCLAIMER */
+    .ep-disclaimer-logo{max-height:150px;max-width:300px;object-fit:contain;margin-bottom:14px;display:block}
+
     /* SKILL GRID */
     .ep-skill-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:40px}
     .ep-skill-card{background:var(--s1);border:1px solid var(--border);border-radius:8px;padding:13px 15px;display:flex;align-items:flex-start;gap:9px}
@@ -111,16 +115,6 @@
     .ep-sbar-track{height:7px;background:var(--border);border-radius:3px;overflow:hidden;margin-bottom:14px}
     .ep-sbar-fill{height:100%;border-radius:3px}
 
-    /* REVIEWS */
-    .ep-review-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:40px}
-    .ep-review-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:18px}
-    .ep-review-hdr{display:flex;align-items:center;gap:10px;margin-bottom:10px}
-    .ep-review-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.8125rem;flex-shrink:0;color:#fff}
-    .ep-review-name{font-weight:600;font-size:.9375rem}
-    .ep-review-date{font-size:.8125rem;color:var(--ink3);margin-top:1px}
-    .ep-review-stars{color:#ef9f27;font-size:.875rem;margin-bottom:7px}
-    .ep-review-txt{font-size:.875rem;line-height:1.6;color:var(--ink2)}
-
     /* INSTRUCTOR */
     .ep-inst-band{background:var(--ink1);border-radius:10px;padding:26px 30px;display:flex;align-items:center;gap:22px;margin-bottom:40px}
     .ep-inst-av{width:64px;height:64px;border-radius:50%;background:var(--acc);color:#fff;font-size:1.625rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;border:3px solid rgba(255,255,255,.12)}
@@ -137,18 +131,6 @@
     .ep-req-item:last-child{border-bottom:none}
     .ep-req-icon{width:20px;height:20px;border-radius:50%;background:var(--acc-l);color:var(--acc);display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px}
 
-    /* RATING SUMMARY */
-    .ep-rat-box{display:flex;gap:28px;align-items:center;background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:20px}
-    .ep-rat-big{text-align:center;flex-shrink:0}
-    .ep-rat-num{font-size:3rem;font-weight:800;color:#ba7517;line-height:1}
-    .ep-rat-stars{color:#ef9f27;font-size:1.2rem;margin-top:3px}
-    .ep-rat-lbl{font-size:.7rem;color:var(--ink3);margin-top:3px;text-transform:uppercase;letter-spacing:.06em}
-    .ep-bar-row{display:flex;align-items:center;gap:10px;margin-bottom:7px;font-size:.8125rem}
-    .ep-bar-track{flex:1;height:7px;background:var(--border);border-radius:3px;overflow:hidden}
-    .ep-bar-fill{height:100%;border-radius:3px;background:#ef9f27}
-    .ep-bar-pct{width:30px;text-align:right;color:var(--ink3)}
-    .ep-bar-lbl{width:14px;color:var(--ink3)}
-
     /* CTA STRIP */
     .ep-cta{background:var(--acc);padding:30px 60px;display:flex;align-items:center;justify-content:space-between;gap:20px}
     .ep-cta-h{color:#fff;font-size:1.25rem;font-weight:700;margin-bottom:5px}
@@ -158,26 +140,57 @@
     .ep-cta-btn{background:#fff;color:var(--acc);padding:13px 30px;font-weight:700;font-size:.9375rem;border-radius:4px;cursor:pointer;border:none;font-family:var(--font);transition:opacity .15s}
     .ep-cta-btn:hover{opacity:.9}
 
+    /* RELATED EXAMS */
+    .ep-related{padding:48px 60px;background:var(--s2);border-top:1px solid var(--border)}
+    .ep-related-title{font-size:1.125rem;font-weight:700;color:var(--ink1);margin-bottom:24px}
+    .ep-related-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+    .ep-rel-card{background:var(--s1);border:1px solid var(--border);border-radius:10px;overflow:hidden;cursor:pointer;transition:box-shadow .15s,transform .15s;text-decoration:none;display:block}
+    .ep-rel-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.09);transform:translateY(-2px)}
+    .ep-rel-thumb{height:100px;background:var(--s3);display:flex;align-items:center;justify-content:center;font-size:2rem;overflow:hidden}
+    .ep-rel-thumb img{width:72px;height:72px;object-fit:contain;}
+    .ep-rel-body{padding:14px}
+    .ep-rel-cat{font-size:.7rem;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--acc-m);margin-bottom:6px}
+    .ep-rel-name{font-size:.9rem;font-weight:700;color:var(--ink1);line-height:1.3;margin-bottom:8px}
+    .ep-rel-price{font-size:.875rem;font-weight:800;color:var(--acc)}
+    @media(max-width:900px){.ep-related{padding:36px 20px}.ep-related-grid{grid-template-columns:repeat(2,1fr)}}
+    @media(max-width:480px){.ep-related-grid{grid-template-columns:1fr}}
+
     /* RESPONSIVE */
-    @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 320px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
-    @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-review-grid{grid-template-columns:1fr}.ep-inst-stats{display:none}}
+    @media(max-width:1100px){.ep-hero{grid-template-columns:1fr 400px}.ep-left{padding:40px}.ep-content{padding:32px 36px}.ep-stats-bar{padding:0 40px}}
+    @media(max-width:900px){.ep-hero{grid-template-columns:1fr}.ep-right{display:none}.ep-body{grid-template-columns:1fr}.ep-rail{position:static;height:auto}.ep-skill-grid{grid-template-columns:1fr 1fr}.ep-inst-stats{display:none}}
     @media(max-width:640px){.ep-left{padding:28px 20px}.ep-content{padding:24px 20px}.ep-stats-bar{padding:0 20px}.ep-skill-grid{grid-template-columns:1fr}.ep-cta{flex-direction:column;align-items:flex-start;padding:24px 20px}}
   </style>
 </head>
 <body>
   <div id="nav-root"></div>
-  <main id="page-main"></main>
+  <main id="page-main">
+    <div id="page-loader" style="display:flex;justify-content:center;align-items:center;min-height:60vh">
+      <div class="loading-spinner"></div>
+    </div>
+  </main>
   <div id="footer-root"></div>
 
   <script src="/js/app.js"></script>
   <script>
+    function toSnakeCase(str) {
+      if (!str) return '';
+      if (str === 'AI') return str;
+      return str
+        .toLowerCase()
+        .trim()
+        .replace(/[_-]+/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+    }
+
     let exam = null;
+    let packages = [];
     let openPkg = null;
-    const SCORES = {'pkg-1':84,'pkg-2':null,'pkg-3':null,'pkg-4':null,'pkg-5':null,'pkg-6':null};
+    const SCORES = {'pkg-1': null, 'pkg-2': null, 'pkg-3': null, 'pkg-4': null, 'pkg-5': null, 'pkg-6': null};
 
     function pkgState(pkg, i, purchased) {
       if (SCORES[pkg.id] !== null) return 'done';
-      if (purchased || i === 0)   return 'free';
+      if (!pkg.question_count) return 'locked';
+      if (purchased || i === 0) return 'free';
       return 'locked';
     }
 
@@ -198,35 +211,44 @@
     }
 
     /* HERO */
+    function getPackageList() {
+      return packages;
+    }
+
+    function getTotalQuestions() {
+      if (exam?.questions) return exam.questions * 6; // legacy support
+      return getPackageList().reduce((sum, pkg) => sum + (pkg.question_count || 0), 0);
+    }
+
+    function getTestDuration() {
+      if (exam?.duration) return exam.duration;
+      return getPackageList()[0]?.time_limit_minutes || 0;
+    }
+
     function renderHero(purchased) {
       return `
       <section class="ep-hero">
         <div class="ep-left">
           <div>
-            <div class="ep-cat">${exam.category}</div>
-            <h1 class="ep-title">${exam.title}</h1>
-            <p class="ep-desc">${exam.description}</p>
+            <div class="ep-cat">${toSnakeCase(exam.category)}</div>
+            <h1 class="ep-title">Practice Exams for ${exam.title}</h1>
+            <p class="ep-desc">This practice exam is designed to help you prepare for the ${exam.title} credential.<br><br>${exam.description}</p>
             <div class="ep-meta">
-              <span class="ep-meta-item">
-                <span class="ep-rating-val">${exam.rating}</span>
-                <span class="ep-rating-stars">${'★'.repeat(Math.round(exam.rating))}</span>
-                <span>(${Utils.formatNumber(exam.students)} students)</span>
-              </span>
-              <span class="ep-meta-item">${svgBook(14)} ${exam.packages} tests</span>
-              <span class="ep-meta-item">${svgAward(14)} ${exam.questions}+ questions</span>
+              <span class="ep-meta-item">${Utils.formatNumber(exam.students)} students enrolled</span>
+              <span class="ep-meta-item">${svgAward(14)} ${getTotalQuestions()} questions</span>
             </div>
           </div>
-          <div class="ep-by">By <strong>${exam.instructor}</strong></div>
         </div>
         <div class="ep-right">
-          <div class="ep-emoji-zone"><span class="ep-emoji-inner">${exam.emoji}</span></div>
+          <div class="ep-emoji-zone">
+            ${exam.logo_url ? `<img src="${exam.logo_url}" alt="${exam.title} logo" class="ep-logo-img" loading="lazy" onerror="this.style.display='none'"/>` : `<span class="ep-emoji-inner">🎯</span>`}
+          </div>
           <div class="ep-price-strip">
             <div>
               <div class="ep-price-num">${Utils.formatPrice(exam.price)}</div>
-              <div class="ep-price-orig">${Utils.formatPrice(exam.price*2)} original</div>
             </div>
             ${purchased
-              ? `<button class="ep-enroll-btn owned" onclick="location='/pages/my-learning.html'">Go to My Learning →</button>`
+              ? `<button class="ep-enroll-btn owned" onclick="location='/my-learning'">Go to My Learning →</button>`
               : `<button class="ep-enroll-btn" id="hero-enroll">Enroll Now</button>`}
           </div>
         </div>
@@ -235,37 +257,37 @@
 
     /* STATS BAR */
     function renderStatsBar() {
-      const done = Object.values(SCORES).filter(s=>s!==null).length;
-      const scores = Object.values(SCORES).filter(s=>s!==null);
-      const avg = scores.length ? Math.round(scores.reduce((a,b)=>a+b,0)/scores.length) : null;
+      const pkgs = getPackageList();
+      const avg = exam?.avg_pass_rate != null ? Math.round(exam.avg_pass_rate) : null;
       return `
       <div class="ep-stats-bar">
-        <div class="ep-stat"><div class="ep-stat-val">${exam.packages}</div><div class="ep-stat-lbl">Practice Tests</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${exam.questions}+</div><div class="ep-stat-lbl">Questions</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">90</div><div class="ep-stat-lbl">Min / Test</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${pkgs.length}</div><div class="ep-stat-lbl">Practice Tests</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${getTotalQuestions()}</div><div class="ep-stat-lbl">Questions</div></div>
+        <div class="ep-stat"><div class="ep-stat-val">${getTestDuration()}</div><div class="ep-stat-lbl">Min / Test</div></div>
         <div class="ep-stat"><div class="ep-stat-val">72%</div><div class="ep-stat-lbl">Pass Score</div></div>
-        <div class="ep-stat"><div class="ep-stat-val">${done}/${exam.packages}</div><div class="ep-stat-lbl">Completed</div></div>
         ${avg!==null?`<div class="ep-stat"><div class="ep-stat-val" style="color:var(--acc-m)">${avg}%</div><div class="ep-stat-lbl">Avg Score</div></div>`:''}
-        <div class="ep-stat"><div class="ep-stat-val" style="color:#ba7517">${exam.rating}</div><div class="ep-stat-lbl">Rating</div></div>
       </div>`;
     }
 
     /* RAIL */
     function renderRail(purchased) {
+      const pkgs = getPackageList();
       const done = Object.values(SCORES).filter(s=>s!==null).length;
-      const pct = Math.round(done/exam.packages*100);
+      const pct = Math.round(done/(pkgs.length || 1)*100);
       return `
       <aside class="ep-rail">
         <div class="ep-rail-label">Test Packages</div>
-        ${MOCK_PACKAGES.map((pkg,i)=>{
+        ${pkgs.map((pkg,i)=>{
           const state = pkgState(pkg,i,purchased);
           const score = SCORES[pkg.id];
+          const disabled = pkg.question_count === 0;
+          const metaText = disabled ? 'No questions' : state === 'done' ? `Done · ${score}%` : state === 'free' ? 'Ready' : 'Locked';
           return `
-          <div class="ep-rail-item ${state}" data-pkg="${pkg.id}" data-state="${state}">
+          <div class="ep-rail-item ${state}" data-pkg="${pkg.id}" data-state="${state}" data-disabled="${disabled}">
             <div class="ep-rail-badge">${state==='done'?'✓':state==='locked'?'🔒':i+1}</div>
             <div>
               <div class="ep-rail-pname">${pkg.title}</div>
-              <div class="ep-rail-pmeta">${state==='done'?`Done · ${score}%`:state==='free'?'Ready':'Locked'}</div>
+              <div class="ep-rail-pmeta">${metaText}</div>
             </div>
             ${score!==null?`<div class="ep-rail-score">${score}%</div>`:''}
           </div>`;
@@ -274,7 +296,7 @@
         <div class="ep-rail-prog">
           <div class="ep-rail-prog-lbl">Overall Progress</div>
           <div class="ep-rail-track"><div class="ep-rail-fill" style="width:${pct}%"></div></div>
-          <div class="ep-rail-pct">${done} of ${exam.packages} completed</div>
+          <div class="ep-rail-pct">${done} of ${pkgs.length} completed</div>
         </div>
       </aside>`;
     }
@@ -296,11 +318,12 @@
 
     /* PACKAGES */
     function renderPackages(purchased) {
+      const pkgs = getPackageList();
       return `
       <div style="margin-bottom:40px">
         <div class="ep-sh">Practice Tests</div>
         <div id="pkg-grid">
-          ${MOCK_PACKAGES.map((pkg,i)=>{
+          ${pkgs.map((pkg,i)=>{
             const state = pkgState(pkg,i,purchased);
             const score = SCORES[pkg.id];
             const isOpen = openPkg===pkg.id;
@@ -331,10 +354,12 @@
                   <div class="ep-sbar-row"><span>Your score</span><span style="font-weight:700;color:${score>=72?'var(--acc-m)':'#a32d2d'}">${score}%</span></div>
                   <div class="ep-sbar-track"><div class="ep-sbar-fill" style="width:${score}%;background:${score>=72?'var(--acc-m)':'#a32d2d'}"></div></div>
                 </div>`:''}
-                <p class="t-body t-muted" style="margin-bottom:16px">${pkg.description}</p>
+                ${pkg.description && pkg.description !== exam.description ? `<p class="t-body t-muted" style="margin-bottom:16px">${pkg.description}</p>` : ''}
                 ${state==='locked'
                   ?`<button class="btn btn-primary" id="unlock-btn">Unlock with Full Access</button>`
-                  :`<a href="/pages/exam-quiz.html?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                  : pkg.question_count > 0
+                    ? `<a href="/exam-quiz?slug=${exam.slug}&pkg=${pkg.id}" class="btn btn-primary">${score!==null?'Retake Test':'Start Test →'}</a>`
+                    : `<span class="t-body t-muted">No questions available</span>`
                 }
               </div>`:''}
             </div>`;
@@ -345,11 +370,9 @@
 
     /* REQUIREMENTS */
     function renderRequirements() {
-      const reqs = [
-        'No prior certification experience required',
-        'Basic understanding of cloud computing concepts',
-        'A computer or tablet with an internet connection',
-      ];
+      const reqs = exam.requirements || [];
+      if (reqs.length === 0) return '';
+
       return `
       <div style="margin-bottom:40px">
         <div class="ep-sh">Requirements</div>
@@ -362,107 +385,84 @@
       </div>`;
     }
 
-    /* INSTRUCTOR */
-    function renderInstructor() {
+    /* disclaimer */
+    function renderDisclaimer() {
       return `
       <div style="margin-bottom:40px">
-        <div class="ep-sh">Instructor</div>
-        <div class="ep-inst-band">
-          <div class="ep-inst-av">C</div>
-          <div>
-            <div class="ep-inst-name">${exam.instructor}</div>
-            <div class="ep-inst-role">Senior Cloud &amp; Security Architect</div>
-            <div class="ep-inst-bio">10+ years helping engineers pass certification exams. Specialises in AWS, Kubernetes, and security frameworks across 8 courses.</div>
-          </div>
-          <div class="ep-inst-stats">
-            <div style="text-align:center"><div class="ep-inst-sv">50K+</div><div class="ep-inst-sl">Students</div></div>
-            <div style="text-align:center"><div class="ep-inst-sv">4.9</div><div class="ep-inst-sl">Rating</div></div>
-            <div style="text-align:center"><div class="ep-inst-sv">8</div><div class="ep-inst-sl">Courses</div></div>
-          </div>
+        <div class="ep-sh">LEGAL NOTICE & DISCLAIMER:</div>
+        <div class="ep-disclaimer">
+          <p>${exam.disclaimer} The exam questions aren't copied directly from the official exam or another creator.</p>
         </div>
+        ${exam.official_link ? `
+        <div style="margin-top:16px;">
+          <a href="${exam.official_link}" target="_blank" rel="noopener noreferrer"
+             style="display:inline-flex;align-items:center;gap:8px;color:var(--acc-m);font-size:.9rem;font-weight:600;text-decoration:none;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+            Official Exam Page
+          </a>
+        </div>` : ''}
       </div>`;
     }
 
-    /* REVIEWS */
-    function renderReviews() {
-      const reviews = [
-        {name:'Alex Chen',   color:'#0f6e56',init:'A',date:'2 weeks ago',rating:5,text:'Passed my AWS SAA on the first attempt! The questions closely matched the real exam and each explanation is genuinely useful.'},
-        {name:'Maria Garcia',color:'#185fa5',init:'M',date:'1 month ago', rating:5,text:'The AI hint system is brilliant — it nudges you in the right direction without spoiling the answer. Exactly what I needed.'},
-        {name:'James Liu',   color:'#993c1d',init:'J',date:'1 month ago', rating:4,text:'Scored 890/1000 on the real exam. The practice tests here were harder, which forced me to understand concepts deeply.'},
-        {name:'Sofia Reyes', color:'#534ab7',init:'S',date:'6 weeks ago', rating:5,text:'Clean and focused. The timed mode perfectly replicates real exam pressure. Would recommend to anyone sitting this cert.'},
-      ];
+    /* RELATED EXAMS */
+    function renderRelated(relatedExams) {
+      if (!relatedExams || relatedExams.length === 0) return '';
       return `
-      <div style="margin-bottom:40px">
-        <div class="ep-sh">Reviews</div>
-        <div class="ep-rat-box">
-          <div class="ep-rat-big">
-            <div class="ep-rat-num">${exam.rating}</div>
-            <div class="ep-rat-stars">${'★'.repeat(Math.round(exam.rating))}</div>
-            <div class="ep-rat-lbl">Course Rating</div>
-          </div>
-          <div style="flex:1">
-            ${[5,4,3,2,1].map(s=>{
-              const pct = s===5?70:s===4?20:s===3?6:2;
-              return `
-              <div class="ep-bar-row">
-                <span class="ep-bar-lbl">${s}</span>
-                <div class="ep-bar-track"><div class="ep-bar-fill" style="width:${pct}%"></div></div>
-                <span class="ep-bar-pct">${pct}%</span>
-              </div>`;
-            }).join('')}
-          </div>
-        </div>
-        <div class="ep-review-grid">
-          ${reviews.map(r=>`
-          <div class="ep-review-card">
-            <div class="ep-review-hdr">
-              <div class="ep-review-av" style="background:${r.color}">${r.init}</div>
-              <div><div class="ep-review-name">${r.name}</div><div class="ep-review-date">${r.date}</div></div>
+      <section class="ep-related">
+        <div class="ep-related-title">More exams in ${toSnakeCase(exam.category)}</div>
+        <div class="ep-related-grid">
+          ${relatedExams.map(e => `
+          <a class="ep-rel-card" href="/detail/${e.slug}">
+            <div class="ep-rel-thumb">
+              ${e.logo_url
+                ? `<img src="${e.logo_url}" alt="${e.title}" loading="lazy" onerror="this.parentElement.innerHTML='🎯'"/>`
+                : '🎯'}
             </div>
-            <div class="ep-review-stars">${'★'.repeat(r.rating)}${'☆'.repeat(5-r.rating)}</div>
-            <div class="ep-review-txt">${r.text}</div>
-          </div>`).join('')}
+            <div class="ep-rel-body">
+              <div class="ep-rel-cat">${toSnakeCase(e.category)}</div>
+              <div class="ep-rel-name">${e.title}</div>
+              <div class="ep-rel-price">${Utils.formatPrice(e.price)}</div>
+            </div>
+          </a>`).join('')}
         </div>
-      </div>`;
-    }
-
-    /* CTA STRIP */
-    function renderCta(purchased) {
-      if (purchased) return '';
-      return `
-      <div class="ep-cta">
-        <div>
-          <div class="ep-cta-h">Ready to pass ${exam.title.split(' ').slice(0,4).join(' ')}?</div>
-          <div class="ep-cta-sub">All ${exam.packages} practice tests · 30-day money-back guarantee</div>
-        </div>
-        <div class="ep-cta-right">
-          <div class="ep-cta-price">${Utils.formatPrice(exam.price)}</div>
-          <button class="ep-cta-btn" id="cta-enroll">Enroll Now</button>
-        </div>
-      </div>`;
+      </section>`;
     }
 
     /* ASSEMBLE */
-    function buildPage() {
+    function buildPage(relatedExams = []) {
       const purchased = State.hasPurchased(exam.id);
       document.getElementById('page-main').innerHTML =
         renderHero(purchased)
         + renderStatsBar()
-        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderInstructor()}${renderReviews()}</div></div>`
-        + renderCta(purchased);
+        + `<div class="ep-body">${renderRail(purchased)}<div class="ep-content">${renderSkills()}${renderPackages(purchased)}${renderRequirements()}${renderDisclaimer()}</div></div>`
+        + renderRelated(relatedExams);
       bindAll(purchased);
     }
 
-    function doEnroll() {
-      if (!State.user) { location.href='/pages/login.html'; return; }
-      State.addPurchase(exam.id);
-      Toast.show(`Access granted to ${exam.title}!`);
-      setTimeout(buildPage, 500);
+    async function doEnroll() {
+      if (!State.user) { location.href = '/login?redirect=' + encodeURIComponent(location.pathname); return; }
+
+      const btns = [document.getElementById('hero-enroll'), document.getElementById('cta-enroll'), document.getElementById('unlock-btn')].filter(Boolean);
+      btns.forEach(b => { b.disabled = true; b.textContent = 'Redirecting to PayPal…'; });
+
+      try {
+        const res = await API.payments.checkout(exam.id);
+        if (res.approval_url) {
+          location.href = res.approval_url;
+        } else {
+          Toast.show('Could not start checkout. Please try again.', 'error');
+          btns.forEach(b => { b.disabled = false; b.textContent = b.id === 'unlock-btn' ? 'Unlock with Full Access' : 'Enroll Now'; });
+        }
+      } catch (e) {
+        Toast.show(e.message || 'Checkout failed', 'error');
+        btns.forEach(b => { b.disabled = false; b.textContent = b.id === 'unlock-btn' ? 'Unlock with Full Access' : 'Enroll Now'; });
+      }
     }
 
     function bindAll(purchased) {
       document.getElementById('hero-enroll')?.addEventListener('click', doEnroll);
       document.getElementById('cta-enroll')?.addEventListener('click', doEnroll);
+      document.getElementById('unlock-btn')?.addEventListener('click', doEnroll);
 
       /* pkg toggle */
       document.querySelectorAll('[data-toggle]').forEach(el => {
@@ -475,8 +475,9 @@
       /* rail clicks */
       document.querySelectorAll('.ep-rail-item').forEach(item => {
         item.addEventListener('click', () => {
-          if (item.dataset.state==='locked') { doEnroll(); return; }
-          location.href=`/pages/exam-quiz.html?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
+          if (item.dataset.disabled === 'true') { return; }
+          if (item.dataset.state === 'locked') { doEnroll(); return; }
+          location.href=`/exam-quiz?slug=${exam.slug}&pkg=${item.dataset.pkg}`;
         });
       });
     }
@@ -497,14 +498,48 @@
       document.getElementById('unlock-btn')?.addEventListener('click', doEnroll);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
+    document.addEventListener('DOMContentLoaded', async () => {
       State.init(); Toast.init();
       Nav.render('');
       Footer.render();
-      const slug = Utils.getParam('slug') || 'aws-saa-c03';
-      exam = MOCK_EXAMS.find(e=>e.slug===slug) || MOCK_EXAMS[0];
-      document.title = exam.title + ' — ExamPrep';
-      buildPage();
+
+      const pathParts = window.location.pathname.split('/');
+      const slug = pathParts[pathParts.indexOf('detail') + 1];
+
+      try {
+        exam = await API.exams.get(slug);
+      } catch (err) {
+        document.getElementById('page-main').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">Exam Not Found</h2><p class="t-muted mt-8">${err.message}</p></div>`;
+        return;
+      }
+
+      try {
+        packages = await API.exams.packages(exam.id);
+      } catch {
+        packages = [];
+      }
+
+      // Sync purchase state from the real API so localStorage can't be spoofed
+      if (State.user) {
+        try {
+          const purchases = await API.payments.myPurchases();
+          State.purchases = (purchases || []).map(p => p.exam_id);
+          localStorage.setItem('ep_purchases', JSON.stringify(State.purchases));
+        } catch {
+          // fall back to cached localStorage value
+        }
+      } else {
+        State.purchases = [];
+      }
+
+      document.title = `Practice Exams for ${exam.title} — CertQuestionBank`;
+
+      let relatedExams = [];
+      try {
+        relatedExams = await API.exams.related(exam.id, exam.category);
+      } catch { /* non-critical, skip silently */ }
+
+      buildPage(relatedExams);
     });
   </script>
 </body>

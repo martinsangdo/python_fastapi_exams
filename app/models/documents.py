@@ -14,7 +14,8 @@ Collections:
   leaderboard  — aggregated top scores per exam
 """
 from datetime import datetime, timezone
-from typing import Optional
+from typing import Optional, Dict
+from uuid import uuid4
 from bson import ObjectId
 
 
@@ -35,6 +36,7 @@ def new_user(email: str, username: str, hashed_password: str, role: str = "user"
         "profile": {
             "full_name": "",
             "avatar_url": "",
+            "bio": "",
         },
         "stats": {
             "total_attempts": 0,
@@ -66,6 +68,42 @@ def new_exam(
         "is_published": False,
         "total_questions": 0,           # denormalized counter (write-through)
         "avg_pass_rate": 0.0,
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
+def new_cert_metadata(
+    name: str,
+    collection_name: str,
+    symbol: str,
+    prompt_context: str,
+    multi_choice_prompt_prefix: str,
+    multi_choice_questions: int,
+    multi_selection_prompt_prefix: str,
+    category: str,
+    short_brief: str,
+    slug: str,
+    duration: int = 0,
+    disclaimer: str = "",
+    what_learn: list = None,
+    requirements: list = None,
+) -> dict:
+    return {
+        "name": name,
+        "collection_name": collection_name,
+        "symbol": symbol,
+        "prompt_context": prompt_context,
+        "multi_choice_prompt_prefix": multi_choice_prompt_prefix,
+        "multi_choice_questions": multi_choice_questions,
+        "multi_selection_prompt_prefix": multi_selection_prompt_prefix,
+        "category": category,
+        "short_brief": short_brief,
+        "slug": slug,
+        "duration": duration,
+        "disclaimer": disclaimer,
+        "what_learn": what_learn or [],
+        "requirements": requirements or [],
         "created_at": utcnow(),
         "updated_at": utcnow(),
     }
@@ -121,6 +159,30 @@ def new_question(
     }
 
 
+def new_cert_question(
+    question: str,
+    options: Dict[str, str],
+    answer: str,
+    explanation: Dict[str, str],
+    q_type: str = "multiple-choice",
+    domain: int = 1,
+    exported: int = 0,
+    uuid: str | None = None,
+) -> dict:
+    return {
+        "question": question,
+        "options": options,
+        "answer": answer,
+        "explanation": explanation,
+        "type": q_type,
+        "domain": domain,
+        "exported": exported,
+        "uuid": uuid or str(uuid4()),
+        "created_at": utcnow(),
+        "updated_at": utcnow(),
+    }
+
+
 # ─── Attempt ──────────────────────────────────────────────────────────────────
 def new_attempt(user_id: str, package_id: str, exam_id: str) -> dict:
     return {
@@ -149,19 +211,32 @@ def new_answer(question_id: str, selected_keys: list[str], is_correct: bool, tim
     }
 
 
+# ─── Contact Inquiry ──────────────────────────────────────────────────────────
+def new_contact_inquiry(name: str, email: str, subject: str, message: str, ip: str) -> dict:
+    return {
+        "name": name.strip(),
+        "email": email.lower().strip(),
+        "subject": subject.strip(),
+        "message": message.strip(),
+        "ip": ip,
+        "status": "open",   # "open" | "resolved"
+        "created_at": utcnow(),
+    }
+
+
 # ─── Purchase ─────────────────────────────────────────────────────────────────
 def new_purchase(
     user_id: str,
     exam_id: str,
     amount_usd: float,
-    stripe_payment_id: str,
+    paypal_order_id: str,
     status: str = "completed",
 ) -> dict:
     return {
         "user_id": user_id,
         "exam_id": exam_id,
         "amount_usd": amount_usd,
-        "stripe_payment_id": stripe_payment_id,
+        "paypal_order_id": paypal_order_id,
         "status": status,               # "pending" | "completed" | "refunded"
         "purchased_at": utcnow(),
         "expires_at": None,             # None = lifetime access

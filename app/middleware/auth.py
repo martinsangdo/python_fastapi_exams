@@ -9,6 +9,7 @@ Middleware stack covering:
 """
 import time
 import uuid
+from datetime import datetime
 from typing import Optional
 
 from fastapi import Depends, HTTPException, Request, status
@@ -74,13 +75,9 @@ async def get_optional_user(
 
 
 # ─── Rate Limiting ────────────────────────────────────────────────────────────
-# Module 2: Solutions Architect — protect against DDoS and API abuse
 
 class RateLimiter:
-    """
-    Token bucket rate limiter using Redis.
-    Each IP gets RATE_LIMIT_PER_MINUTE tokens per minute.
-    """
+    """Redis-based rate limiter (general endpoints)."""
     def __init__(self, limit: int = None, window: int = 60):
         self.limit = limit or settings.RATE_LIMIT_PER_MINUTE
         self.window = window
@@ -90,7 +87,6 @@ class RateLimiter:
         ip = request.client.host if request.client else "unknown"
         key = f"ratelimit:{ip}"
 
-        # Atomic increment + set expiry (Lua would be ideal, this is demo)
         count = await cache.incr(key)
         if count == 1:
             await cache.expire(key, self.window)
@@ -99,14 +95,58 @@ class RateLimiter:
             log.warning("rate_limit.exceeded", ip=ip, count=count)
             raise HTTPException(
                 status_code=status.HTTP_429_TOO_MANY_REQUESTS,
-                detail=f"Rate limit exceeded: {self.limit} requests/minute",
+                detail=f"Too many requests. Please try again later.",
                 headers={"Retry-After": str(self.window)},
             )
 
         return {"ip": ip, "count": count, "limit": self.limit}
 
 
+class MongoRateLimiter:
+    """
+    MongoDB-based rate limiter for sensitive endpoints (no Redis dependency).
+    Uses the pw_reset_rate_limits collection which has a TTL index on expires_at.
+    """
+    def __init__(self, limit: int, window_seconds: int = 3600, key_prefix: str = "ip"):
+        self.limit = limit
+        self.window = window_seconds
+        self.key_prefix = key_prefix
+
+    async def __call__(self, request: Request):
+        from datetime import timedelta
+        from app.core.database import get_db
+        db = get_db()
+
+        ip = request.client.host if request.client else "unknown"
+        key = f"{self.key_prefix}:{ip}"
+        now = datetime.utcnow()
+        window_start = now - timedelta(seconds=self.window)
+
+        count = await db.pw_reset_rate_limits.count_documents({
+            "key": key,
+            "created_at": {"$gte": window_start},
+        })
+
+        if count >= self.limit:
+            log.warning("mongo_rate_limit.exceeded", key=key, count=count)
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail="Too many requests. Please try again later.",
+                headers={"Retry-After": str(self.window)},
+            )
+
+        await db.pw_reset_rate_limits.insert_one({
+            "key": key,
+            "created_at": now,
+            "expires_at": now + timedelta(seconds=self.window),
+        })
+
+
 rate_limit = RateLimiter()
+
+# Stricter limiters for sensitive endpoints — MongoDB-backed, no Redis
+login_rate_limit        = MongoRateLimiter(limit=30, window_seconds=3600, key_prefix="login_ip")
+forgot_pw_rate_limit    = MongoRateLimiter(limit=10, window_seconds=3600, key_prefix="forgotpw_ip")
 
 
 # ─── Logging Middleware ───────────────────────────────────────────────────────
@@ -120,13 +160,13 @@ async def logging_middleware(request: Request, call_next):
     request_id = str(uuid.uuid4())[:8]
     start = time.monotonic()
 
-    log.info(
-        "request.start",
-        request_id=request_id,
-        method=request.method,
-        path=request.url.path,
-        ip=request.client.host if request.client else "unknown",
-    )
+    # log.info(
+    #     "request.start",
+    #     request_id=request_id,
+    #     method=request.method,
+    #     path=request.url.path,
+    #     ip=request.client.host if request.client else "unknown",
+    # )
 
     try:
         response = await call_next(request)
@@ -143,14 +183,14 @@ async def logging_middleware(request: Request, call_next):
         raise
 
     duration_ms = round((time.monotonic() - start) * 1000, 2)
-    log.info(
-        "request.complete",
-        request_id=request_id,
-        method=request.method,
-        path=request.url.path,
-        status_code=response.status_code,
-        duration_ms=duration_ms,
-    )
+    # log.info(
+    #     "request.complete",
+    #     request_id=request_id,
+    #     method=request.method,
+    #     path=request.url.path,
+    #     status_code=response.status_code,
+    #     duration_ms=duration_ms,
+    # )
 
     # Add observability headers
     response.headers["X-Request-ID"] = request_id

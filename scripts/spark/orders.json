@@ -1,0 +1,97 @@
+[
+  {
+    "order_id": " ORD-1001 ",
+    "customer_id": "CUS-501",
+    "order_date": "2026/06/10 09:15:00",
+    "status": "completed",
+    "customer_name": "  John Smith  ",
+    "customer_email": "john.smith@email.com",
+    "currency": "usd",
+    "items": [
+      {
+        "product_id": "P100",
+        "quantity": 2,
+        "unit_price": 25.50
+      },
+      {
+        "product_id": "P200",
+        "quantity": 1,
+        "unit_price": 89.99
+      }
+    ],
+    "total_amount": 140.99
+  },
+  {
+    "order_id": "ORD-1002",
+    "customer_id": "CUS-502",
+    "order_date": "2026-06-10T11:30:00Z",
+    "status": "PENDING",
+    "customer_name": "Sarah Johnson",
+    "customer_email": "sarah.johnson-email.com",
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P300",
+        "quantity": 1,
+        "unit_price": 45.00
+      }
+    ],
+    "total_amount": 45
+  },
+  {
+    "order_id": "ORD-1003",
+    "customer_id": "",
+    "order_date": "2026-06-11T08:20:00Z",
+    "status": "Complete",
+    "customer_name": "David Lee",
+    "customer_email": "david.lee@email.com",
+    "currency": "Usd",
+    "items": [
+      {
+        "product_id": "P400",
+        "quantity": 1,
+        "unit_price": 39.99
+      }
+    ],
+    "total_amount": 39.99
+  },
+  {
+    "order_id": "ORD-1004",
+    "customer_id": "CUS-504",
+    "order_date": "2026-06-11T13:45:00Z",
+    "status": "Completed",
+    "customer_name": "Emily Chen",
+    "customer_email": "emily.chen@email.com",
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P500",
+        "quantity": 2,
+        "unit_price": 20
+      }
+    ],
+    "total_amount": 100
+  },
+  {
+    "order_id": "ORD-1001",
+    "customer_id": "CUS-501",
+    "order_date": "2026-06-10T09:15:00Z",
+    "status": "Completed",
+    "customer_name": "John Smith",
+    "customer_email": "john.smith@email.com",
+    "currency": "USD",
+    "items": [
+      {
+        "product_id": "P100",
+        "quantity": 2,
+        "unit_price": 25.50
+      },
+      {
+        "product_id": "P200",
+        "quantity": 1,
+        "unit_price": 89.99
+      }
+    ],
+    "total_amount": 140.99
+  }
+]

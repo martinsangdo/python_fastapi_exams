@@ -15,21 +15,22 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
     # App
-    APP_NAME: str = "ExamPrep"
+    APP_NAME: str = "CertQuestionBank"
     APP_ENV: str = "development"
     DEBUG: bool = True
     API_V1_STR: str = "/api/v1"
     FRONTEND_URL: str = "http://localhost:3000"
 
     # Security
-    SECRET_KEY: str = "change-me-in-production"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    SECRET_KEY: str
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 240
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     ALGORITHM: str = "HS256"
 
     # MongoDB (CP system — consistent reads, partition tolerant)
     MONGODB_URL: str = "mongodb://localhost:27017"
-    MONGODB_DB_NAME: str = "examprep"
+    REMOTE_MONGO_DB: str | None = None
+    MONGODB_DB_NAME: str = "db_certificates"
 
     # Redis cache
     REDIS_URL: str = "redis://localhost:6379/0"
@@ -39,9 +40,16 @@ class Settings(BaseSettings):
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379/2"
 
-    # Payment
-    STRIPE_SECRET_KEY: str = ""
-    STRIPE_WEBHOOK_SECRET: str = ""
+    # Email — Resend
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "noreply@examprep.com"
+    APP_SUPPORT_EMAIL: str = "support@examprep.com"
+
+    # Payment — PayPal
+    PAYPAL_CLIENT_ID: str = ""
+    PAYPAL_CLIENT_SECRET: str = ""
+    PAYPAL_MODE: str = "sandbox"  # "sandbox" | "live"
+    PAYPAL_WEBHOOK_ID: str = ""
 
     # AI
     OPENAI_API_KEY: str = ""
@@ -58,7 +66,10 @@ class Settings(BaseSettings):
 
 @lru_cache()  # AHA principle: compute once, reuse everywhere
 def get_settings() -> Settings:
-    return Settings()
+    settings = Settings()
+    if settings.REMOTE_MONGO_DB:
+        settings.MONGODB_URL = settings.REMOTE_MONGO_DB
+    return settings
 
 
 settings = get_settings()

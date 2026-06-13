@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Admin — ExamPrep</title>
+  <title>Admin — CertQuestionBank</title>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -116,7 +117,7 @@ function renderExams() {
     </div>
     <div class="table-container">
       <table class="table">
-        <thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Students</th><th>Rating</th><th>Status</th><th>Actions</th></tr></thead>
+        <thead><tr><th>Title</th><th>Category</th><th>Price</th><th>Students</th><th>Status</th><th>Actions</th></tr></thead>
         <tbody id="exam-table-body">
           ${MOCK_EXAMS.map(e=>`
             <tr>
@@ -132,7 +133,6 @@ function renderExams() {
               <td><span class="badge badge-purple">${e.category}</span></td>
               <td style="font-weight:700">${Utils.formatPrice(e.price)}</td>
               <td>${Utils.formatNumber(e.students)}</td>
-              <td><span style="color:var(--star);font-weight:600">${e.rating} ★</span></td>
               <td><span class="badge badge-green">Published</span></td>
               <td>
                 <div class="flex gap-4">

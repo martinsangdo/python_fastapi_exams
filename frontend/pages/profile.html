@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>My Profile — ExamPrep</title>
+  <title>My Profile — CertQuestionBank</title>
   <link rel="stylesheet" href="/css/base.css"/>
   <link rel="stylesheet" href="/css/nav.css"/>
   <link rel="stylesheet" href="/css/components.css"/>
@@ -29,9 +30,7 @@
 <div class="sticky-bar">
   <div class="container">
     <div class="tabs" id="profile-tabs">
-      <button class="tab active" data-tab="overview">Overview</button>
-      <button class="tab" data-tab="settings">Settings</button>
-      <button class="tab" data-tab="certificates">Certificates</button>
+      <button class="tab active" data-tab="settings">Settings</button>
       <button class="tab" data-tab="security">Security</button>
     </div>
   </div>
@@ -44,7 +43,7 @@
 <div id="footer-root"></div>
 <script src="/js/app.js"></script>
 <script>
-let activeTab = 'overview';
+let activeTab = 'settings';
 
 function renderHeader() {
   const u = State.user;
@@ -57,61 +56,6 @@ function renderHeader() {
      <span class="badge badge-green">Active</span>`;
 }
 
-function renderOverview() {
-  return `
-    <div class="grid-4 mb-32">
-      ${[
-        {num:'3',lbl:'Courses Enrolled',icon:'book'},
-        {num:'7',lbl:'Tests Completed',icon:'award'},
-        {num:'73%',lbl:'Average Score',icon:'chart'},
-        {num:'2',lbl:'Tests Passed',icon:'check'},
-      ].map(s => `<div class="stat-card"><div style="color:var(--purple);margin-bottom:8px">${Icons[s.icon]?.(24)||''}</div><div class="stat-card-num">${s.num}</div><div class="stat-card-lbl">${s.lbl}</div></div>`).join('')}
-    </div>
-
-    <h3 class="t-h3 mb-16">Recent Activity</h3>
-    <div class="table-container mb-32">
-      <table class="table">
-        <thead><tr><th>Exam</th><th>Practice Test</th><th>Score</th><th>Result</th><th>Date</th></tr></thead>
-        <tbody>
-          ${[
-            {exam:'AWS SAA-C03',pkg:'Practice Test 2',score:'84%',pass:true,date:'Today'},
-            {exam:'AWS SAA-C03',pkg:'Practice Test 1',score:'71%',pass:false,date:'Yesterday'},
-            {exam:'Security+',pkg:'Practice Test 1',score:'79%',pass:true,date:'3 days ago'},
-            {exam:'Python Pro',pkg:'Practice Test 1',score:'65%',pass:false,date:'1 week ago'},
-          ].map(r=>`<tr>
-            <td style="font-weight:500">${r.exam}</td>
-            <td class="t-muted t-sm">${r.pkg}</td>
-            <td><strong>${r.score}</strong></td>
-            <td><span class="badge ${r.pass?'badge-green':'badge-red'}">${r.pass?'PASS':'FAIL'}</span></td>
-            <td class="t-sm t-muted">${r.date}</td>
-          </tr>`).join('')}
-        </tbody>
-      </table>
-    </div>
-
-    <div class="grid-2 gap-24">
-      <div class="admin-card">
-        <h3 class="t-h3 mb-16">Score Trend</h3>
-        ${[['Practice Test 1','62%',62],['Practice Test 2','71%',71],['Practice Test 3','76%',76],['Practice Test 4','84%',84]].map(([l,v,p])=>`
-          <div class="bar-row">
-            <div class="bar-label">${l}</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${p}%;background:${p>=72?'var(--green)':'var(--purple)'}"></div></div>
-            <div class="bar-value">${v}</div>
-          </div>`).join('')}
-      </div>
-      <div class="admin-card">
-        <h3 class="t-h3 mb-16">Weak Areas</h3>
-        ${[['Networking & VPC','48%',48],['IAM & Security','55%',55],['Storage Classes','61%',61],['Databases','68%',68]].map(([l,v,p])=>`
-          <div class="bar-row">
-            <div class="bar-label">${l}</div>
-            <div class="bar-track"><div class="bar-fill" style="width:${p}%;background:var(--red)"></div></div>
-            <div class="bar-value">${v}</div>
-          </div>`).join('')}
-        <p class="t-xs t-muted mt-12">Focus on these topics to improve your score</p>
-      </div>
-    </div>`;
-}
-
 function renderSettings() {
   const u = State.user || {};
   return `
@@ -121,64 +65,25 @@ function renderSettings() {
         <div style="display:flex;flex-direction:column;gap:16px" id="profile-form">
           <div class="input-group">
             <label class="input-label">Full Name</label>
-            <input class="input" id="f-name" value="${u.username||''}"/>
+            <input class="input" id="f-name" value="${(u.profile && u.profile.full_name) || ''}" />
           </div>
           <div class="input-group">
             <label class="input-label">Email address</label>
-            <input class="input" id="f-email" type="email" value="${u.email||''}"/>
+            <input class="input" id="f-email" type="email" value="${u.email||''}" disabled />
           </div>
           <div class="input-group">
             <label class="input-label">Username</label>
-            <input class="input" id="f-username" value="${u.username||''}"/>
+            <input class="input" id="f-username" value="${u.username||''}" disabled />
           </div>
           <div class="input-group">
             <label class="input-label">Bio</label>
-            <textarea class="input" rows="3" placeholder="Tell us a bit about yourself…"></textarea>
+            <textarea class="input" id="f-bio" rows="3" placeholder="Tell us a bit about yourself…">${(u.profile && u.profile.bio) || ''}</textarea>
           </div>
           <button class="btn btn-primary" id="save-profile-btn">Save Changes</button>
         </div>
       </div>
 
-      <div class="admin-card">
-        <h3 class="t-h3 mb-16">Notification Preferences</h3>
-        ${[
-          ['Email me when I pass a test','true'],
-          ['Remind me to practice every week','true'],
-          ['New exams in my categories','false'],
-          ['Promotional offers','false'],
-        ].map(([label, checked])=>`
-          <div class="flex-between mb-12">
-            <span class="t-body">${label}</span>
-            <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer">
-              <input type="checkbox" ${checked==='true'?'checked':''} style="opacity:0;width:0;height:0"/>
-              <span style="position:absolute;inset:0;background:${checked==='true'?'var(--purple)':'var(--border)'};border-radius:12px;transition:.2s"></span>
-              <span style="position:absolute;height:18px;width:18px;background:#fff;border-radius:50%;top:3px;left:${checked==='true'?'23':'3'}px;transition:.2s"></span>
-            </label>
-          </div>`).join('')}
-      </div>
     </div>`;
-}
-
-function renderCertificates() {
-  const certs = [
-    {exam:'AWS SAA-C03',date:'May 2026',score:'84%',icon:'☁️'},
-    {exam:'CompTIA Security+',date:'April 2026',score:'79%',icon:'🔐'},
-  ];
-  return `
-    <h2 class="t-h2 mb-24">Certificates of Completion</h2>
-    ${certs.length===0 ? `<div class="empty-state"><div class="icon">🏅</div><h3 class="t-h3">No certificates yet</h3><p class="t-muted mt-8">Pass a practice exam to earn your first certificate</p></div>` : `
-      <div class="grid-2 mb-24">
-        ${certs.map(c=>`
-          <div class="cert-card">
-            <div class="cert-sub">Certificate of Completion</div>
-            <div class="cert-title">${c.icon} ${c.exam}</div>
-            <div class="cert-score">Scored ${c.score} · ${c.date}</div>
-            <button class="btn btn-outline mt-20" style="border-color:rgba(255,255,255,.3);color:#fff;font-size:.8125rem">
-              ${Icons.award(14)} Download PDF
-            </button>
-          </div>`).join('')}
-      </div>
-      <div class="alert alert-info"><span>${Icons.info(16)}</span><span>Certificates are awarded when you pass a practice exam with ≥72% score. They demonstrate your preparation readiness.</span></div>`}`;
 }
 
 function renderSecurity() {
@@ -207,22 +112,18 @@ function renderSecurity() {
             ${!s.current ? `<button class="btn btn-ghost btn-sm" style="color:var(--red)">Revoke</button>` : ''}
           </div>`).join('')}
       </div>
-      <div class="admin-card">
-        <h3 class="t-h3 mb-16" style="color:var(--red)">Danger Zone</h3>
-        <p class="t-body t-muted mb-16">Permanently delete your account and all your data. This action cannot be undone.</p>
-        <button class="btn btn-danger btn-sm" onclick="Toast.show('Account deletion requires email confirmation. Check your inbox.','error')">Delete My Account</button>
-      </div>
     </div>`;
 }
 
-const TABS = { overview: renderOverview, settings: renderSettings, certificates: renderCertificates, security: renderSecurity };
+const TABS = { settings: renderSettings, security: renderSecurity };
 
 function renderTab() {
   document.getElementById('tab-content').innerHTML = TABS[activeTab]?.() || '';
   document.getElementById('save-profile-btn')?.addEventListener('click', async () => {
     const name = document.getElementById('f-name')?.value;
+    const bio = document.getElementById('f-bio')?.value;
     try {
-      await API.users.updateProfile({ full_name: name });
+      await API.users.updateProfile({ full_name: name, bio: bio });
       Toast.show('Profile updated!');
     } catch { Toast.show('Profile saved (demo mode)'); }
   });

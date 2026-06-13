@@ -20,13 +20,15 @@ async def get_user_by_id(user_id: str) -> Optional[dict]:
     return _serialize(user) if user else None
 
 
-async def update_profile(user_id: str, full_name: str = None, avatar_url: str = None) -> Optional[dict]:
+async def update_profile(user_id: str, full_name: str = None, avatar_url: str = None, bio: str = None) -> Optional[dict]:
     db = get_db()
     updates = {"updated_at": utcnow()}
     if full_name is not None:
         updates["profile.full_name"] = full_name
     if avatar_url is not None:
         updates["profile.avatar_url"] = avatar_url
+    if bio is not None:
+        updates["profile.bio"] = bio
 
     user = await db.users.find_one_and_update(
         {"_id": ObjectId(user_id)},

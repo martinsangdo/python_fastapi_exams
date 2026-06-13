@@ -1,12 +1,17 @@
 """
 app/api/v1/endpoints/auth.py — Authentication routes
 """
-from fastapi import APIRouter, Depends, HTTPException
-from app.schemas.schemas import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, OkResponse
+from fastapi import APIRouter, Depends, HTTPException, Request
+from app.schemas.schemas import RegisterRequest, LoginRequest, RefreshRequest, TokenResponse, OkResponse, ForgotPasswordRequest, ResetPasswordRequest
 from app.services import auth_service
-from app.middleware.auth import get_current_user, rate_limit
+from app.middleware.auth import get_current_user, rate_limit, login_rate_limit, forgot_pw_rate_limit
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
+
+
+@router.get("/captcha")
+async def get_captcha():
+    return await auth_service.generate_captcha()
 
 
 @router.post("/register", response_model=TokenResponse, status_code=201)
@@ -18,9 +23,10 @@ async def register(data: RegisterRequest, _=Depends(rate_limit)):
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(data: LoginRequest, _=Depends(rate_limit)):
+async def login(data: LoginRequest, request: Request, _=Depends(login_rate_limit)):
+    client_ip = request.client.host if request.client else "unknown"
     try:
-        return await auth_service.login_user(data)
+        return await auth_service.login_user(data, client_ip)
     except auth_service.AuthError as e:
         raise HTTPException(e.status_code, e.message)
 
@@ -41,6 +47,25 @@ async def logout(data: RefreshRequest, current_user=Depends(get_current_user)):
         refresh_token=data.refresh_token
     )
     return OkResponse(message="Logged out successfully")
+
+
+@router.post("/forgot-password", response_model=OkResponse)
+async def forgot_password(data: ForgotPasswordRequest, request: Request, _=Depends(forgot_pw_rate_limit)):
+    client_ip = request.client.host if request.client else "unknown"
+    try:
+        await auth_service.forgot_password(data.email, client_ip)
+    except auth_service.AuthError as e:
+        raise HTTPException(status_code=e.status_code, detail=str(e))
+    return OkResponse(message="If that email is registered you will receive a reset link shortly")
+
+
+@router.post("/reset-password", response_model=OkResponse)
+async def reset_password(data: ResetPasswordRequest):
+    try:
+        await auth_service.reset_password(data.token, data.new_password)
+    except auth_service.AuthError as e:
+        raise HTTPException(e.status_code, e.message)
+    return OkResponse(message="Password updated successfully")
 
 
 @router.get("/me")

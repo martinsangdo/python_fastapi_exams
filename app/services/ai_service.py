@@ -265,9 +265,6 @@ async def _retrieve_context(query: str, exam_id: str, top_k: int = 3) -> str:
     In production: use ChromaDB or pgvector.
     """
     # Production implementation:
-    # from langchain_openai import OpenAIEmbeddings
-    # from langchain_community.vectorstores import Chroma
-    #
     # embeddings = OpenAIEmbeddings(api_key=settings.OPENAI_API_KEY)
     # vectorstore = Chroma(
     #     collection_name=f"exam_{exam_id}",
