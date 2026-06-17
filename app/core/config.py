@@ -67,7 +67,7 @@ class Settings(BaseSettings):
     GOOGLE_ANALYTICS_ID: str = ""
 
     # Assets
-    CERT_LOGO_BASE_URL: str = "https://certquestionbank.com"
+    CERT_LOGO_BASE_URL: str = "https://cdn.certquestionbank.com"
 
 
 @lru_cache()  # AHA principle: compute once, reuse everywhere

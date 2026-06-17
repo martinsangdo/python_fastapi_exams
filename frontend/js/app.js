@@ -7,7 +7,7 @@
 // Use a relative path so the frontend always talks to the server that served it.
 // This prevents connectivity issues when switching between localhost and 127.0.0.1.
 const API_BASE = window.EXAMPREP_API || '/api/v1';
-const CERT_LOGO_BASE_URL = 'https://certquestionbank.com';
+const CERT_LOGO_BASE_URL = 'https://cdn.certquestionbank.com';
 const MOCK_ALLOWED = false; // Set to false to force real API calls and see actual errors
 
 /* ── State ── */
