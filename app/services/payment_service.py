@@ -318,8 +318,8 @@ async def list_user_purchases(user_id: str) -> list[dict]:
             if not exam:
                 exam = await db.tb_cert_metadata.find_one({"_id": exam_oid}, {"name": 1, "slug": 1, "logo_url": 1, "category": 1, "symbol": 1})
             if exam:
-                symbol = (exam.get("symbol") or "").upper()
-                logo = exam.get("thumbnail_url") or exam.get("logo_url") or (f"/logos/{symbol}.png" if symbol else "")
+                symbol = exam.get("symbol") or ""
+                logo = f"{settings.CERT_LOGO_BASE_URL}/{symbol}.png" if symbol else ""
                 p["exam_title"] = exam.get("title") or exam.get("name")
                 p["exam_slug"] = exam.get("slug")
                 p["exam_thumbnail"] = logo

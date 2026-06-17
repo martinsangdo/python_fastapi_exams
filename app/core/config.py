@@ -63,6 +63,12 @@ class Settings(BaseSettings):
     # Monitoring
     PROMETHEUS_ENABLED: bool = True
 
+    # Analytics
+    GOOGLE_ANALYTICS_ID: str = ""
+
+    # Assets
+    CERT_LOGO_BASE_URL: str = "https://certquestionbank.com"
+
 
 @lru_cache()  # AHA principle: compute once, reuse everywhere
 def get_settings() -> Settings:

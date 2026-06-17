@@ -12,6 +12,7 @@ from typing import Optional
 from bson import ObjectId
 import structlog
 
+from app.core.config import settings
 from app.core.database import get_db
 from app.core.cache import cache_get, cache_set, cache_delete_pattern, CacheKeys
 from app.models.documents import new_exam, new_package, new_question, utcnow
@@ -120,8 +121,7 @@ def _transform_cert(cert: dict) -> dict:
     total_q = cert.get("multi_choice_questions") or cert.get("total_questions") or cert.get("questions", 0)
     
     symbol = cert.get("symbol") or ""
-    normalized_symbol = symbol.upper() if isinstance(symbol, str) else ""
-    logo_url = cert.get("logo_url") or (normalized_symbol and f"/logos/{normalized_symbol}.png") or ""
+    logo_url = f"{settings.CERT_LOGO_BASE_URL}/{symbol}.png" if symbol else ""
     return {
         "id": cert.get("id") or str(cert.get("_id")),
         "slug": cert.get("slug") or "",
@@ -136,7 +136,7 @@ def _transform_cert(cert: dict) -> dict:
         "duration": cert.get("duration") or cert.get("time_limit_minutes") or 0,
         "disclaimer": cert.get("disclaimer", ""),
         "avg_pass_rate": cert.get("avg_pass_rate"),
-        "symbol": normalized_symbol,
+        "symbol": symbol,
         "logo_url": logo_url,
         "official_link": cert.get("link") or "",
     }

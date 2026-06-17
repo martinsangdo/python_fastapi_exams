@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <meta name="author" content="Martin Sang Do"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Exam Detail — CertQuestionBank</title>
   <meta name="robots" content="index, follow"/>
@@ -508,6 +509,8 @@
 
       try {
         exam = await API.exams.get(slug);
+        const _sym = exam.symbol || '';
+        exam.logo_url = _sym ? `${CERT_LOGO_BASE_URL}/${_sym}.png` : '';
       } catch (err) {
         document.getElementById('page-main').innerHTML = `<div class="container py-40 t-center"><h2 class="t-h2">Exam Not Found</h2><p class="t-muted mt-8">${err.message}</p></div>`;
         return;
@@ -536,7 +539,10 @@
 
       let relatedExams = [];
       try {
-        relatedExams = await API.exams.related(exam.id, exam.category);
+        relatedExams = (await API.exams.related(exam.id, exam.category)).map(e => ({
+          ...e,
+          logo_url: e.symbol ? `${CERT_LOGO_BASE_URL}/${e.symbol}.png` : ''
+        }));
       } catch { /* non-critical, skip silently */ }
 
       buildPage(relatedExams);

@@ -13,6 +13,18 @@ from app.core.database import connect_db, close_db
 from app.core.cache import init_cache, close_cache
 from app.middleware.auth import logging_middleware
 
+def _ga_snippet() -> str:
+    ga_id = settings.GOOGLE_ANALYTICS_ID
+    if not ga_id:
+        return ""
+    return (
+        f'<script async src="https://www.googletagmanager.com/gtag/js?id={ga_id}"></script>\n'
+        f'<script>window.dataLayer=window.dataLayer||[];'
+        f'function gtag(){{dataLayer.push(arguments);}}gtag("js",new Date());gtag("config","{ga_id}");</script>'
+    )
+
+_GA_SNIPPET = _ga_snippet()
+
 log = structlog.get_logger()
 
 
@@ -64,6 +76,19 @@ def create_app() -> FastAPI:
 
     # Request logging
     app.middleware("http")(logging_middleware)
+
+    # Google Analytics injection
+    if _GA_SNIPPET:
+        @app.middleware("http")
+        async def inject_ga(request: Request, call_next):
+            response = await call_next(request)
+            ct = response.headers.get("content-type", "")
+            if "text/html" in ct:
+                body = b"".join([chunk async for chunk in response.body_iterator])
+                body = body.replace(b"</head>", (_GA_SNIPPET + "\n</head>").encode())
+                headers = {k: v for k, v in response.headers.items() if k.lower() != "content-length"}
+                return HTMLResponse(content=body.decode(), status_code=response.status_code, headers=headers)
+            return response
 
     # Prometheus
     if settings.PROMETHEUS_ENABLED:
