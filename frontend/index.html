@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+  <meta name="author" content="Martin Sang Do"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>CertQuestionBank — Master Any Certification</title>
   <meta name="description" content="Practice with real exam-style questions for AWS, Azure, GCP, CompTIA, and more. 6 full-length timed tests per certification. 85% pass rate."/>
@@ -145,14 +146,13 @@ async function loadCategories() {
 }
 
 function enrichExamLogo(exam) {
-  const rawSymbol = exam.symbol || '';
-  const symbol = rawSymbol.toUpperCase();
-  const logo_url = exam.logo_url || (symbol ? `/logos/${symbol}.png` : '');
+  const symbol = exam.symbol || '';
+  const logo_url = symbol ? `${CERT_LOGO_BASE_URL}/${symbol}.png` : '';
   return { ...exam, symbol, logo_url };
 }
 
 async function loadCertifications() {
-  const CACHE_KEY = 'ep_home_certs_v2';
+  const CACHE_KEY = 'ep_home_certs_v3';
   const EXPIRY = 7 * 24 * 60 * 60 * 1000; // 7 days in ms
 
   // Try to load from cache first

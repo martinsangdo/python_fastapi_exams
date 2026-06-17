@@ -1,0 +1,1 @@
+- record how many questions the paid user viewed, so that we know % to do refund
